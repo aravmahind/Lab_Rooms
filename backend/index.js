@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { createRoom, getRooms, getRoomById, deleteRoom } from './controllers/Room.controller.js';
+import { createRoom, getRooms, getRoomById, deleteRoom, getRoomByCode } from './controllers/Room.controller.js';
 
 dotenv.config();
 
@@ -21,6 +21,7 @@ mongoose
 // Routes
 app.post('/rooms', createRoom);
 app.get('/rooms', getRooms);
+app.get('/rooms/code/:code', getRoomByCode);
 app.get('/rooms/:id', getRoomById);
 app.delete('/rooms/:id', deleteRoom);
 

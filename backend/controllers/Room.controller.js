@@ -4,7 +4,7 @@ import { generateRoomCode } from '../utils/generateRoomCode.js';
 // Create a new room
 export const createRoom = async (req, res) => {
   try {
-    const { roomName, hostName, expiry } = req.body;
+    const { roomName, hostName, expiry, password } = req.body;
     
     let code;
     let existing;
@@ -24,6 +24,7 @@ export const createRoom = async (req, res) => {
     const room = new Room({
       code,
       expiresAt,
+      password: password || null,
       data: { roomName, hostName }
     });
     await room.save();
@@ -47,6 +48,17 @@ export const getRooms = async (req, res) => {
 export const getRoomById = async (req, res) => {
   try {
     const room = await Room.findById(req.params.id);
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+    res.status(200).json(room);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+export const getRoomByCode = async (req, res) => {
+  try {
+    const room = await Room.findOne({ code: req.params.code });
     if (!room) return res.status(404).json({ error: 'Room not found' });
     res.status(200).json(room);
   } catch (error) {

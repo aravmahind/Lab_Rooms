@@ -19,6 +19,11 @@ const roomSchema = new mongoose.Schema(
       required: true,
       index: { expireAfterSeconds: 0 } 
     },
+    password: {
+      type: String,
+      required: false,
+      default: null
+    },
     data: {
       type: mongoose.Schema.Types.Mixed,
       default: {}

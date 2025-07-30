@@ -23,7 +23,7 @@ const Landing: React.FC = () => {
   }
 
   const handleJoinRoom = () => {
-    navigate('/room/demo123')
+    navigate('/join-room')
   }
 
   return (
