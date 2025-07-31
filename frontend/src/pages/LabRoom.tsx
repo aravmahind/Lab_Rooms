@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 
 interface TeamMember {
@@ -6,6 +6,14 @@ interface TeamMember {
   name: string
   isOnline: boolean
   joinedAt: Date
+}
+
+interface Message {
+  id: string
+  sender: string
+  content: string
+  timestamp: Date
+  type: 'message' | 'system'
 }
 
 const LabRoom: React.FC = () => {
@@ -47,6 +55,64 @@ const LabRoom: React.FC = () => {
     }
   ])
 
+  // Chat functionality state
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      sender: 'System',
+      content: 'Welcome to the room! 🎉',
+      timestamp: new Date(Date.now() - 10000),
+      type: 'system'
+    },
+    {
+      id: '2',
+      sender: 'Tanishq Kulkarni',
+      content: 'Hey everyone! Ready to collaborate?',
+      timestamp: new Date(Date.now() - 8000),
+      type: 'message'
+    },
+    {
+      id: '3',
+      sender: 'Arav Mahind',
+      content: 'Yes! This is awesome 🚀',
+      timestamp: new Date(Date.now() - 5000),
+      type: 'message'
+    },
+    {
+      id: '4',
+      sender: 'Chirag Chaudhari',
+      content: 'Let\'s share some code snippets!',
+      timestamp: new Date(Date.now() - 2000),
+      type: 'message'
+    }
+  ])
+  const [newMessage, setNewMessage] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newMessage.trim()) return
+
+    const message: Message = {
+      id: Date.now().toString(),
+      sender: memberName,
+      content: newMessage.trim(),
+      timestamp: new Date(),
+      type: 'message'
+    }
+
+    setMessages(prev => [...prev, message])
+    setNewMessage('')
+  }
+
   useEffect(() => {
     const validateRoom = async () => {
       if (!roomId) {
@@ -69,6 +135,15 @@ const LabRoom: React.FC = () => {
             setTeamMembers(prev => {
               const existingMember = prev.find(member => member.name === memberName)
               if (!existingMember) {
+                // Add system message for new member
+                setMessages(prevMessages => [...prevMessages, {
+                  id: `join-${Date.now()}`,
+                  sender: 'System',
+                  content: `${memberName} joined the room 👋`,
+                  timestamp: new Date(),
+                  type: 'system'
+                }])
+                
                 return [...prev, {
                   id: Date.now().toString(),
                   name: memberName,
@@ -328,7 +403,7 @@ const LabRoom: React.FC = () => {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
                     <span className="text-xl">📝</span>
-                    Code Editor
+                    Paste Your Content
                   </h3>
                   <div className="flex gap-2">
                     <button className="px-3 py-1 bg-green-500/20 text-green-400 rounded-lg text-sm font-semibold hover:bg-green-500/30 transition-colors">
@@ -340,14 +415,19 @@ const LabRoom: React.FC = () => {
                 <div className="flex-1 bg-black/50 rounded-xl border border-gray-400/30 p-0 overflow-hidden">
                   <textarea
                     className="w-full h-full bg-transparent text-white p-4 resize-none focus:outline-none text-sm font-mono leading-relaxed"
-                    placeholder="// Start coding here...
-// This is a collaborative code editor
-// Your teammates can see your changes in real-time
+                    placeholder="// Paste your content here...
+// Share code, notes, or any text with your team
+// Everyone can see your changes in real-time
 
-function welcomeToLabRooms() {
-    console.log('Welcome to collaborative coding!');
-    // Add your code here
-}"
+Welcome to LabRooms collaborative workspace!
+
+✨ What you can do:
+• Paste and share code snippets
+• Write notes and documentation  
+• Collaborate on text content
+• Chat with your team members
+
+Start typing or paste your content below..."
                     style={{ minHeight: '100%' }}
                   />
                 </div>
@@ -364,20 +444,42 @@ function welcomeToLabRooms() {
                   Team Chat
                 </h3>
                 <div className="flex-1 bg-black/30 rounded-xl border border-emerald-400/20 p-2 mb-2 overflow-y-auto">
-                  <div className="space-y-1">
-                    <div className="text-xs text-gray-400 text-center">Welcome to the room! 🎉</div>
+                  <div className="space-y-2">
+                    {messages.map((message) => (
+                      <div key={message.id} className={`${message.type === 'system' ? 'text-center' : ''}`}>
+                        {message.type === 'system' ? (
+                          <div className="text-xs text-gray-400">{message.content}</div>
+                        ) : (
+                          <div className="bg-emerald-500/10 rounded-lg p-2 border border-emerald-400/20">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-semibold text-emerald-300">{message.sender}</span>
+                              <span className="text-xs text-gray-400">
+                                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <p className="text-xs text-white break-words">{message.content}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
                   </div>
                 </div>
-                <div className="flex gap-1 flex-shrink-0">
+                <form onSubmit={handleSendMessage} className="flex gap-1 flex-shrink-0">
                   <input 
                     type="text" 
                     placeholder="Type message..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
                     className="flex-1 bg-black/50 border border-emerald-400/30 rounded-lg px-2 py-1.5 text-white text-xs focus:outline-none focus:border-emerald-400"
                   />
-                  <button className="px-2 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-semibold hover:bg-emerald-500/30 transition-colors flex-shrink-0">
+                  <button 
+                    type="submit"
+                    className="px-2 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-semibold hover:bg-emerald-500/30 transition-colors flex-shrink-0"
+                  >
                     Send
                   </button>
-                </div>
+                </form>
               </div>
 
               {/* Files Section */}
