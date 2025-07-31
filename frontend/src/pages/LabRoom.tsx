@@ -56,7 +56,7 @@ const LabRoom: React.FC = () => {
       }
 
       try {
-        const response = await fetch(`http://localhost:5000/rooms/code/${roomId}`)
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/rooms/code/${roomId}`)
         if (!response.ok) {
           setRoomExists(false)
         } else {

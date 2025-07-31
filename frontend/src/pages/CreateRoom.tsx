@@ -34,8 +34,8 @@ const CreateRoom: React.FC = () => {
       if (enablePassword && password.trim()) {
         roomData.password = password.trim()
       }
-      
-      const response = await fetch('http://localhost:5000/rooms', {
+
+      const response = await fetch(import.meta.env.VITE_API_URL + '/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(roomData)

@@ -36,7 +36,7 @@ const JoinRoom: React.FC = () => {
 
     try {
       // Check if room exists
-      const response = await fetch(`http://localhost:5000/rooms/code/${roomCode.trim().toUpperCase()}`)
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/rooms/code/${roomCode.trim().toUpperCase()}`)
       
       if (!response.ok) {
         if (response.status === 404) {
