@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import io, { Socket } from 'socket.io-client'
-import { FileManager, type SavedFile } from '../utils/fileManager'
+// import io, { Socket } from 'socket.io-client'
+// import { FileManager, type SavedFile } from '../utils/fileManager'
 
 interface Message {
   id: string
@@ -11,12 +11,12 @@ interface Message {
   type: 'user' | 'system'
 }
 
-interface TeamMember {
-  id: string
-  name: string
-  joinedAt: Date
-  isOnline: boolean
-}
+// interface TeamMember {
+//   id: string
+//   name: string
+//   joinedAt: Date
+//   isOnline: boolean
+// }
 
 const LabRoom: React.FC = () => {
   const navigate = useNavigate()
@@ -24,19 +24,19 @@ const LabRoom: React.FC = () => {
   
   // State management
   const [activeTab, setActiveTab] = useState<'code' | 'file' | 'whiteboard'>('code')
-  const [roomName] = useState('Lab Room')
+  // const [roomName] = useState('Lab Room')
   const [hostName] = useState('Siddhi')
   const [memberName] = useState(localStorage.getItem('memberName') || 'Anonymous')
-  const [isLoaded, setIsLoaded] = useState(false)
+  // const [isLoaded, setIsLoaded] = useState(false)
   const [timeLeft, setTimeLeft] = useState(3600) // 1 hour in seconds
-  const [showRoomCode, setShowRoomCode] = useState(false)
+  // const [showRoomCode, setShowRoomCode] = useState(false)
   const [isTeamMembersCollapsed, setIsTeamMembersCollapsed] = useState(false)
   const [isSavedFilesCollapsed, setIsSavedFilesCollapsed] = useState(false)
   const [isTeamChatCollapsed, setIsTeamChatCollapsed] = useState(false)
   const [currentTheme, setCurrentTheme] = useState<'light' | 'dark' | 'blue'>('blue')
   const [showThemeDropdown, setShowThemeDropdown] = useState(false)
-  const [savedFiles, setSavedFiles] = useState<SavedFile[]>([])
-  const [saveMessage, setSaveMessage] = useState('')
+  // const [savedFiles, setSavedFiles] = useState<SavedFile[]>([])
+  // const [saveMessage, setSaveMessage] = useState('')
   
   // Hardcoded room code and team members
   const hardcodedRoomCode = 'Cacf26a'
@@ -47,10 +47,10 @@ const LabRoom: React.FC = () => {
   ]
   
   // Socket and messaging
-  const [socket, setSocket] = useState<Socket | null>(null)
+  // const [socket, setSocket] = useState<Socket | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  // const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Content states
@@ -101,10 +101,10 @@ const LabRoom: React.FC = () => {
   }, [roomCode])
 
   useEffect(() => {
-    setIsLoaded(true)
+    // setIsLoaded(true)
     
     // Load saved files
-    setSavedFiles(FileManager.getSavedFiles())
+    // setSavedFiles(FileManager.getSavedFiles())
     
     // Timer countdown
     const timer = setInterval(() => {
@@ -143,11 +143,11 @@ const LabRoom: React.FC = () => {
     }
   }
 
-  const copyRoomCode = () => {
-    if (roomCode) {
-      navigator.clipboard.writeText(roomCode)
-    }
-  }
+  // const copyRoomCode = () => {
+  //   if (roomCode) {
+  //     navigator.clipboard.writeText(roomCode)
+  //   }
+  // }
 
   // Theme configuration
   const getThemeDisplayName = (theme: string) => {
