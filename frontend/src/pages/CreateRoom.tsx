@@ -15,6 +15,10 @@ const CreateRoom: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
 
+  const [hostNameError, setHostNameError] = useState('');
+  const [roomNameError, setRoomNameError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
   useEffect(() => {
     setIsVisible(true)
   }, [])
@@ -29,6 +33,45 @@ const CreateRoom: React.FC = () => {
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+
+    // Input Validation
+    const unameRegEx = /^[a-zA-Z][a-zA-Z0-9_]{3,25}$/;
+    const rnameRegEx = /^[a-zA-Z][a-zA-Z0-9 _]{3,25}$/;
+    const passwordRegEx = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    let errorFlag = false;
+
+    if(!rnameRegEx.test(roomName.trim())) {
+      setRoomNameError(() => "Invalide Room Name");
+      errorFlag = true;
+      setIsLoading(false);
+    }
+    else {
+      setRoomNameError("");
+    }
+
+    if(!unameRegEx.test(hostName.trim())) {
+      setHostNameError(() => "Invalid Host Name");
+      errorFlag = true;
+      setIsLoading(false);
+    } 
+    else {
+      setHostNameError(() => "");
+    }
+
+    if(enablePassword && !passwordRegEx.test(password.trim())) {
+      setPasswordError(() => "Password must contain: at least 1 uppercase letter, 1 lowercase letter, 1 digit, 1 special character (@$!%*?&), and be at least 8 characters long." );
+      errorFlag = true;
+      setIsLoading(false);
+    }
+    else {
+      setPasswordError("");
+    }
+
+    if(errorFlag) {
+      return;
+    }
+
     try {
       const roomData: any = { roomName, hostName, expiry }
       if (enablePassword && password.trim()) {
@@ -44,6 +87,7 @@ const CreateRoom: React.FC = () => {
       const room = await response.json()
       const roomNameParam = room.data?.roomName || 'Untitled Room'
       const hostNameParam = room.data?.hostName || 'Anonymous Host'
+
       navigate(`/labroom/${room.code}?roomName=${encodeURIComponent(roomNameParam)}&hostName=${encodeURIComponent(hostNameParam)}`)
     } catch (err) {
       alert('Error creating room: ' + (err as Error).message)
@@ -134,6 +178,7 @@ const CreateRoom: React.FC = () => {
                         />
                         <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/5 to-emerald-400/5 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                       </div>
+                      {roomNameError && <p className='text-red-500 text-sm font-bold'>{roomNameError}</p>}
                     </div>
 
                     {/* Host Name */}
@@ -151,8 +196,10 @@ const CreateRoom: React.FC = () => {
                           onChange={(e) => setHostName(e.target.value)}
                           className="w-full bg-black/20 backdrop-blur-sm border-2 border-emerald-400/30 text-white placeholder-gray-400 focus:border-emerald-400 focus:ring-emerald-400/30 rounded-lg py-3 px-4 text-sm transition-all duration-300 hover:border-emerald-400/50 hover:bg-black/30"
                         />
+                        
                         <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/5 to-cyan-400/5 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                       </div>
+                      {hostNameError && <p className='text-red-500 font-bold text-sm'>{hostNameError}</p>}
                     </div>
                   </div>
 
@@ -239,6 +286,7 @@ const CreateRoom: React.FC = () => {
                           </button>
                           <div className="absolute inset-0 bg-gradient-to-r from-purple-400/5 to-cyan-400/5 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                         </div>
+                        {passwordError && <p className='text-red-500 text-sm font-bold'>{passwordError}</p>}
                       </div>
                     )}
                   </div>
