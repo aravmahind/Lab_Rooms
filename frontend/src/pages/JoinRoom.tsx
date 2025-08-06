@@ -15,6 +15,8 @@ const JoinRoom: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false)
   const [error, setError] = useState('')
 
+  const [nameError, setNameError] = useState("");
+
   useEffect(() => {
     setIsVisible(true)
   }, [])
@@ -29,6 +31,18 @@ const JoinRoom: React.FC = () => {
     if (!name.trim()) {
       setError('Please enter your name')
       return
+    }
+
+    // Input Validation
+    const unameRegEx = /^[a-zA-Z][a-zA-Z0-9_]{3,25}$/;
+
+    if(!unameRegEx.test(name.trim())) {
+      setNameError(() => "Invalid User Name");
+      setIsLoading(false);
+      return;
+    } 
+    else {
+      setNameError(() => "");
     }
 
     setIsLoading(true)
@@ -153,6 +167,7 @@ const JoinRoom: React.FC = () => {
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/5 to-cyan-400/5 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     </div>
+                    {nameError && <p className='text-red-500 text-sm font-bold'>{nameError}</p>}
                   </div>
 
                   {/* Room Code */}
