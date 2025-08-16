@@ -163,15 +163,15 @@ const LabRoom: React.FC = () => {
     switch (currentTheme) {
       case 'dark':
         return {
-          bg: 'bg-gray-900',
-          headerBg: 'bg-gray-800',
-          sidebarBg: 'bg-gray-800',
-          contentBg: 'bg-gray-700',
+          bg: 'bg-[#000814]',
+          headerBg: 'bg-[#000000]',
+          sidebarBg: 'bg-[#03071e]',
+          contentBg: 'bg-[#000814]',
           textPrimary: 'text-white',
           textSecondary: 'text-gray-300',
           border: 'border-gray-600',
-          chatBg: 'bg-gray-700',
-          messageBg: 'bg-gray-600'
+          chatBg: 'bg-[#2b2d42]',
+          messageBg: 'bg-[#000814]'
         }
       case 'blue':
         return {
@@ -188,8 +188,8 @@ const LabRoom: React.FC = () => {
       default: // light
         return {
           bg: 'bg-gray-50',
-          headerBg: 'bg-gray-100',
-          sidebarBg: 'bg-gray-100',
+          headerBg: 'bg-[#fbfefb]',
+          sidebarBg: 'bg-[#f8f9fa]',
           contentBg: 'bg-white',
           textPrimary: 'text-gray-800',
           textSecondary: 'text-gray-600',
@@ -287,6 +287,11 @@ function example() {
       <div className={`${currentTheme === 'blue' ? 'bg-blue-800' : themeStyles.headerBg} border-b ${themeStyles.border} px-6 py-4`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
+            <img 
+              src="/blueLogo.png" 
+              alt="LabRooms Logo" 
+              className="w-12 h-12 object-contain"
+            />
             <h1 className={`text-xl font-semibold ${currentTheme === 'blue' ? 'text-white' : themeStyles.textPrimary}`}>
               Room Code: {hardcodedRoomCode}
             </h1>
