@@ -25,6 +25,10 @@ const LabRoom: React.FC = () => {
   const [showRoomCode, setShowRoomCode] = useState(false)
   const [roomExists, setRoomExists] = useState(true)
   const [isValidating, setIsValidating] = useState(true)
+  const [isDarkTheme, setIsDarkTheme] = useState(true)
+  const [showTeamPanel, setShowTeamPanel] = useState(false)
+  const [showChatPanel, setShowChatPanel] = useState(false)
+  const [activeSection, setActiveSection] = useState('code-sharing') // New state for navigation
   
   // Countdown timer state
   const [timeLeft, setTimeLeft] = useState(2 * 60 * 60) // 2 hours in seconds
@@ -193,47 +197,30 @@ const LabRoom: React.FC = () => {
     // You can add a toast notification here
   }
 
+  const themeClasses = {
+    bg: isDarkTheme ? 'bg-gray-900' : 'bg-gray-50',
+    text: isDarkTheme ? 'text-white' : 'text-gray-900',
+    textSecondary: isDarkTheme ? 'text-gray-300' : 'text-gray-600',
+    textMuted: isDarkTheme ? 'text-gray-400' : 'text-gray-500',
+    border: isDarkTheme ? 'border-gray-700' : 'border-gray-200',
+    card: isDarkTheme ? 'bg-gray-800' : 'bg-white',
+    cardSecondary: isDarkTheme ? 'bg-gray-700' : 'bg-gray-100',
+    input: isDarkTheme ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300',
+    button: isDarkTheme ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600',
+    buttonSecondary: isDarkTheme ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300',
+  }
+
   return (
-    <div className="min-h-screen relative overflow-hidden bg-black">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-cyan-900/20 to-blue-900/20">
-        {/* Floating Particles */}
-        <div className="absolute inset-0">
-          {[...Array(30)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-1 h-1 bg-cyan-400/30 rounded-full animate-pulse"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${2 + Math.random() * 3}s`
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Grid Pattern Overlay */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `
-            linear-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '50px 50px'
-        }} />
-      </div>
-
+    <div className={`min-h-screen transition-colors duration-300 ${themeClasses.bg}`}>
       {/* Main Content */}
-      <div className="relative z-10 min-h-screen p-3 md:p-6">
+      <div className="min-h-screen p-4 md:p-6">
         <div className="max-w-7xl mx-auto">
           {/* Room Validation */}
           {isValidating && (
             <div className="flex items-center justify-center min-h-[50vh]">
               <div className="text-center">
-                <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-cyan-400 text-lg">Validating room...</p>
+                <div className={`w-8 h-8 border-2 ${isDarkTheme ? 'border-blue-400' : 'border-blue-500'} border-t-transparent rounded-full animate-spin mx-auto mb-4`}></div>
+                <p className={`text-lg ${themeClasses.text}`}>Validating room...</p>
               </div>
             </div>
           )}
@@ -242,18 +229,18 @@ const LabRoom: React.FC = () => {
             <div className="flex items-center justify-center min-h-[50vh]">
               <div className="text-center max-w-md">
                 <div className="text-6xl mb-4">🚫</div>
-                <h1 className="text-2xl font-bold text-red-400 mb-2">Room Not Found</h1>
-                <p className="text-gray-400 mb-6">The room code you entered doesn't exist or has expired.</p>
+                <h1 className={`text-2xl font-bold text-red-500 mb-2`}>Room Not Found</h1>
+                <p className={`${themeClasses.textMuted} mb-6`}>The room code you entered doesn't exist or has expired.</p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button
                     onClick={() => navigate('/join-room')}
-                    className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-black font-bold rounded-lg transition-colors"
+                    className={`px-6 py-3 ${themeClasses.button} text-white font-semibold rounded-lg transition-colors`}
                   >
                     Try Another Code
                   </button>
                   <button
                     onClick={() => navigate('/')}
-                    className="px-6 py-3 border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10 font-bold rounded-lg transition-colors"
+                    className={`px-6 py-3 ${themeClasses.border} ${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary} font-semibold rounded-lg transition-colors border`}
                   >
                     Go Home
                   </button>
@@ -264,50 +251,124 @@ const LabRoom: React.FC = () => {
 
           {!isValidating && roomExists && (
             <>
-              {/* Header */}
-              <div className={`mb-4 md:mb-6 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">
-                LabRooms Workspace
-              </h1>
-              <button
-                onClick={() => navigate('/')}
-                className="px-3 py-2 text-xs sm:text-sm font-semibold text-cyan-300 border border-cyan-400/50 rounded-lg hover:bg-cyan-400/10 transition-colors duration-200 whitespace-nowrap"
-              >
-                Leave Room
-              </button>
-            </div>
-          </div>
+              {/* Navigation Bar */}
+              <div className={`${themeClasses.cardSecondary} border-b-2 ${themeClasses.border} shadow-sm mb-6 -mx-4 md:-mx-6 px-4 md:px-6 py-4 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                  {/* Left: LabRooms Workspace Title */}
+                  <h1 className={`text-2xl md:text-3xl font-bold ${themeClasses.text}`}>
+                    LabRooms Workspace
+                  </h1>
+                  
+                  {/* Center: Navigation Sections */}
+                  <div className={`flex items-center gap-1 ${themeClasses.cardSecondary} ${themeClasses.border} border rounded-lg p-1`}>
+                    <button
+                      onClick={() => setActiveSection('code-sharing')}
+                      className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                        activeSection === 'code-sharing'
+                          ? `${themeClasses.button} text-white shadow-sm`
+                          : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                      </svg>
+                      Code Sharing
+                    </button>
+                    
+                    <button
+                      onClick={() => setActiveSection('whiteboard')}
+                      className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                        activeSection === 'whiteboard'
+                          ? `${themeClasses.button} text-white shadow-sm`
+                          : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      Whiteboard
+                    </button>
+                    
+                    <button
+                      onClick={() => setActiveSection('file-sharing')}
+                      className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                        activeSection === 'file-sharing'
+                          ? `${themeClasses.button} text-white shadow-sm`
+                          : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                      </svg>
+                      File Sharing
+                    </button>
+                  </div>
+                  
+                  {/* Right: Timer, Toggle, Leave Room */}
+                  <div className="flex items-center gap-3">
+                    {/* Expiry Timer - Single Line Format */}
+                    <div className={`${themeClasses.cardSecondary} rounded-lg px-3 py-2 ${themeClasses.border} border flex items-center gap-2`}>
+                      <span className="text-red-500 text-lg">⏰</span>
+                      <p className={`text-sm font-bold ${themeClasses.text} font-mono`}>
+                        Expires In : {formatTime(timeLeft)}
+                      </p>
+                    </div>
+                    
+                    {/* Theme Toggle */}
+                    <button
+                      onClick={() => setIsDarkTheme(!isDarkTheme)}
+                      className={`p-2 rounded-lg ${themeClasses.cardSecondary} ${themeClasses.border} border transition-colors hover:scale-105`}
+                      title={isDarkTheme ? 'Switch to light theme' : 'Switch to dark theme'}
+                    >
+                      {isDarkTheme ? (
+                        <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                        </svg>
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={() => navigate('/')}
+                      className={`px-4 py-2 text-sm font-semibold ${themeClasses.textSecondary} ${themeClasses.border} border rounded-lg hover:${themeClasses.buttonSecondary} transition-colors`}
+                    >
+                      Leave Room
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-          {/* Responsive Layout - Stack on mobile, grid on desktop */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 min-h-[calc(100vh-120px)]">
+          {/* Responsive Layout - Hide right sidebar, make editor full width */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-140px)]">
             
-            {/* Column 1: Room Info & Team */}
-            <div className={`lg:col-span-3 space-y-3 md:space-y-4 transition-all duration-1000 delay-200 ${isLoaded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
+            {/* Column 1: Room Info - Minimalistic Design */}
+            <div className={`lg:col-span-1 space-y-4 transition-all duration-1000 delay-200 ${isLoaded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
               
-              {/* Room Code & Expiry */}
-              <div className="bg-gradient-to-br from-cyan-900/30 to-emerald-900/30 backdrop-blur-lg rounded-xl md:rounded-2xl border border-cyan-400/20 p-3 md:p-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-base md:text-lg font-bold text-cyan-300 flex items-center gap-2">
-                      <span className="text-lg md:text-xl">🏠</span>
-                      <span className="truncate">{roomName}</span>
+              {/* Room Code & Expiry - Clean Card */}
+              <div className={`${themeClasses.card} rounded-xl ${themeClasses.border} border p-4 shadow-sm`}>
+                <div className="space-y-4">
+                  <div>
+                    <h2 className={`text-lg font-semibold ${themeClasses.text} mb-1`}>
+                      {roomName}
                     </h2>
                   </div>
                   
-                  <div className="space-y-2">
-                    <div className="bg-black/30 rounded-xl p-3 border border-cyan-400/30">
-                      <div className="flex items-center justify-between gap-2">
+                  <div className="space-y-3">
+                    <div className={`${themeClasses.cardSecondary} rounded-lg p-3`}>
+                      <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs text-gray-400 mb-1">Room Code</p>
-                          <p className="text-sm md:text-lg font-black text-cyan-400 font-mono tracking-wider truncate">
+                          <p className={`text-xs ${themeClasses.textMuted} mb-1`}>Room Code</p>
+                          <p className={`text-lg font-mono font-bold ${themeClasses.text} tracking-wider`}>
                             {showRoomCode ? roomCode : '•'.repeat(roomCode.length)}
                           </p>
                         </div>
                         <div className="flex gap-1">
                           <button
                             onClick={() => setShowRoomCode(!showRoomCode)}
-                            className="px-2 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 rounded-lg transition-colors duration-200 text-xs font-semibold"
+                            className={`p-2 ${themeClasses.buttonSecondary} rounded-lg transition-colors hover:scale-105`}
                             title={showRoomCode ? "Hide code" : "Show code"}
                           >
                             {showRoomCode ? (
@@ -323,141 +384,201 @@ const LabRoom: React.FC = () => {
                           </button>
                           <button
                             onClick={copyRoomCode}
-                            className="px-2 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 rounded-lg transition-colors duration-200 text-xs font-semibold whitespace-nowrap"
+                            className={`px-3 py-2 ${themeClasses.button} text-white text-xs font-semibold rounded-lg transition-colors hover:scale-105`}
                           >
                             Copy
                           </button>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="bg-black/30 rounded-xl p-3 border border-emerald-400/30">
-                      <p className="text-xs text-gray-400 mb-1">Expires In</p>
-                      <p className="text-sm font-bold text-emerald-400 flex items-center gap-2">
-                        <span className="text-base md:text-lg">⏰</span>
-                        <span className="font-mono text-sm md:text-base text-white">{formatTime(timeLeft)}</span>
-                      </p>
-                    </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Host Section */}
-              <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 backdrop-blur-lg rounded-2xl border border-purple-400/20 p-3">
-                <h3 className="text-sm font-bold text-purple-300 mb-2 flex items-center gap-2">
-                  <span className="text-lg">👑</span>
-                  Host
-                </h3>
-                <div className="flex items-center gap-2 bg-black/30 rounded-xl p-2 border border-purple-400/30">
-                  <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-bold text-white">{hostName[0]}</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-white text-sm">{hostName}</p>
-                    <p className="text-xs text-green-400 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                      Online
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Team Members Section */}
-              <div className="bg-gradient-to-br from-cyan-900/30 to-emerald-900/30 backdrop-blur-lg rounded-2xl border border-cyan-400/20 p-3 flex-1">
-                <h3 className="text-sm font-bold text-cyan-300 mb-2 flex items-center gap-2">
-                  <span className="text-lg">👥</span>
-                  Team Members ({teamMembers.length})
-                </h3>
-                <div className="space-y-2">
-                  {teamMembers.map((member) => (
-                    <div 
-                      key={member.id} 
-                      className="flex items-center gap-2 bg-black/30 rounded-xl p-2 border border-cyan-400/20 hover:border-cyan-400/40 transition-colors duration-200"
-                    >
-                      <div className="w-6 h-6 bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full flex items-center justify-center">
-                        <span className="text-xs font-bold text-black">{member.name[0]}</span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-white text-xs">{member.name}</p>
-                        <p className="text-xs text-gray-400">
-                          Joined {Math.floor((Date.now() - member.joinedAt.getTime()) / 60000)} min ago
-                        </p>
-                      </div>
-                      <div className={`w-1.5 h-1.5 rounded-full ${member.isOnline ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`}></div>
-                    </div>
-                  ))}
-                  
-                  {teamMembers.length === 0 && (
-                    <div className="text-center py-4">
-                      <p className="text-gray-400 text-xs">No team members yet</p>
-                      <p className="text-gray-500 text-xs mt-1">Share the room code to invite others</p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
 
-            {/* Column 2: File Editor/Workspace - Much Bigger */}
-            <div className={`lg:col-span-6 bg-gradient-to-br from-gray-900/50 to-black/50 backdrop-blur-lg rounded-2xl border border-gray-400/20 p-4 transition-all duration-1000 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            {/* Column 2: File Editor/Workspace - Full Width */}
+            <div className={`lg:col-span-3 ${themeClasses.card} rounded-xl ${themeClasses.border} border p-6 shadow-sm transition-all duration-1000 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
               <div className="h-full flex flex-col">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className={`text-lg font-semibold ${themeClasses.text} flex items-center gap-2`}>
                     <span className="text-xl">📝</span>
-                    Paste Your Content
+                    Code Editor
                   </h3>
                   <div className="flex gap-2">
-                    <button className="px-3 py-1 bg-green-500/20 text-green-400 rounded-lg text-sm font-semibold hover:bg-green-500/30 transition-colors">
+                    <button className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-lg transition-colors">
                       Save
+                    </button>
+                    <button className={`px-4 py-2 ${themeClasses.buttonSecondary} ${themeClasses.textSecondary} text-sm font-semibold rounded-lg transition-colors`}>
+                      Share
                     </button>
                   </div>
                 </div>
                 
-                <div className="flex-1 bg-black/50 rounded-xl border border-gray-400/30 p-0 overflow-hidden">
+                <div className={`flex-1 ${themeClasses.cardSecondary} rounded-lg ${themeClasses.border} border overflow-hidden`}>
                   <textarea
-                    className="w-full h-full bg-transparent text-white p-4 resize-none focus:outline-none text-sm font-mono leading-relaxed"
-                    placeholder="// Paste your content here...
-// Share code, notes, or any text with your team
-// Everyone can see your changes in real-time
+                    className={`w-full h-full ${themeClasses.cardSecondary} ${themeClasses.text} p-4 resize-none focus:outline-none text-sm font-mono leading-relaxed`}
+                    placeholder={`// Welcome to LabRooms collaborative workspace!
+// 
+// ✨ What you can do:
+// • Write and share code in real-time
+// • Collaborate with your team members
+// • Save and export your work
+// • Chat with your team in the sidebar
+//
+// Start coding below...
 
-Welcome to LabRooms collaborative workspace!
+function welcomeToLabRooms() {
+  console.log("Hello, team! Let's build something amazing together!");
+  
+  // Your code here...
+}
 
-✨ What you can do:
-• Paste and share code snippets
-• Write notes and documentation  
-• Collaborate on text content
-• Chat with your team members
-
-Start typing or paste your content below..."
+welcomeToLabRooms();`}
                     style={{ minHeight: '100%' }}
                   />
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Column 3: Chat & Files - Smaller */}
-            <div className={`lg:col-span-3 space-y-3 transition-all duration-1000 delay-600 ${isLoaded ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
-              
-              {/* Chat Section */}
-              <div className="bg-gradient-to-br from-emerald-900/30 to-cyan-900/30 backdrop-blur-lg rounded-2xl border border-emerald-400/20 p-3 flex flex-col" style={{ height: 'calc(50% - 6px)' }}>
-                <h3 className="text-sm font-bold text-emerald-300 mb-2 flex items-center gap-2 flex-shrink-0">
-                  <span className="text-lg">💬</span>
-                  Team Chat
-                </h3>
-                <div className="flex-1 bg-black/30 rounded-xl border border-emerald-400/20 p-2 mb-2 overflow-y-auto">
-                  <div className="space-y-2">
+          {/* Floating Action Buttons - Bottom Right */}
+          <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
+            {/* Team Members Button */}
+            <button
+              onClick={() => setShowTeamPanel(true)}
+              className={`w-14 h-14 ${themeClasses.button} rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center group`}
+              title="View Team Members"
+            >
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-1a6 6 0 01-4-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              {teamMembers.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                  {teamMembers.length}
+                </span>
+              )}
+            </button>
+
+            {/* Chat Button */}
+            <button
+              onClick={() => setShowChatPanel(true)}
+              className={`w-14 h-14 ${themeClasses.button} rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center group`}
+              title="Open Chat"
+            >
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              {messages.length > 4 && (
+                <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                  {messages.length - 4}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Team Members Modal */}
+          {showTeamPanel && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className={`${themeClasses.card} rounded-2xl ${themeClasses.border} border shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden`}>
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className={`text-lg font-semibold ${themeClasses.text} flex items-center gap-2`}>
+                      <span className="text-xl">�</span>
+                      Team Members ({teamMembers.length + 1})
+                    </h3>
+                    <button
+                      onClick={() => setShowTeamPanel(false)}
+                      className={`p-2 ${themeClasses.buttonSecondary} rounded-lg hover:scale-105 transition-transform`}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {/* Host */}
+                    <div className={`flex items-center gap-3 ${themeClasses.cardSecondary} rounded-lg p-3`}>
+                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-bold text-white">{hostName[0]}</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className={`font-semibold ${themeClasses.text}`}>{hostName}</p>
+                        <p className="text-xs text-blue-500 flex items-center gap-1">
+                          <span className="text-sm">👑</span>
+                          Host
+                        </p>
+                      </div>
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    </div>
+
+                    {/* Team Members */}
+                    {teamMembers.map((member) => (
+                      <div 
+                        key={member.id} 
+                        className={`flex items-center gap-3 ${themeClasses.cardSecondary} rounded-lg p-3 transition-colors hover:scale-[1.02]`}
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-bold text-white">{member.name[0]}</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className={`font-medium ${themeClasses.text}`}>{member.name}</p>
+                          <p className={`text-xs ${themeClasses.textMuted}`}>
+                            Joined {Math.floor((Date.now() - member.joinedAt.getTime()) / 60000)} min ago
+                          </p>
+                        </div>
+                        <div className={`w-2 h-2 rounded-full ${member.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      </div>
+                    ))}
+                    
+                    {teamMembers.length === 0 && (
+                      <div className="text-center py-6">
+                        <p className={`${themeClasses.textMuted} text-sm`}>No other members yet</p>
+                        <p className={`${themeClasses.textMuted} text-xs mt-1`}>Share the room code to invite others</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Chat Modal */}
+          {showChatPanel && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className={`${themeClasses.card} rounded-2xl ${themeClasses.border} border shadow-2xl w-full max-w-lg h-[600px] flex flex-col overflow-hidden`}>
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <h3 className={`text-lg font-semibold ${themeClasses.text} flex items-center gap-2`}>
+                      <span className="text-xl">💬</span>
+                      Team Chat
+                    </h3>
+                    <button
+                      onClick={() => setShowChatPanel(false)}
+                      className={`p-2 ${themeClasses.buttonSecondary} rounded-lg hover:scale-105 transition-transform`}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 p-4 overflow-y-auto">
+                  <div className="space-y-3">
                     {messages.map((message) => (
                       <div key={message.id} className={`${message.type === 'system' ? 'text-center' : ''}`}>
                         {message.type === 'system' ? (
-                          <div className="text-xs text-gray-400">{message.content}</div>
+                          <div className={`text-xs ${themeClasses.textMuted} py-1`}>{message.content}</div>
                         ) : (
-                          <div className="bg-emerald-500/10 rounded-lg p-2 border border-emerald-400/20">
+                          <div className={`${themeClasses.cardSecondary} rounded-lg p-3 ${themeClasses.border} border`}>
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-semibold text-emerald-300">{message.sender}</span>
-                              <span className="text-xs text-gray-400">
+                              <span className={`text-sm font-semibold ${themeClasses.text}`}>{message.sender}</span>
+                              <span className={`text-xs ${themeClasses.textMuted}`}>
                                 {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
-                            <p className="text-xs text-white break-words">{message.content}</p>
+                            <p className={`text-sm ${themeClasses.textSecondary} break-words`}>{message.content}</p>
                           </div>
                         )}
                       </div>
@@ -465,46 +586,30 @@ Start typing or paste your content below..."
                     <div ref={messagesEndRef} />
                   </div>
                 </div>
-                <form onSubmit={handleSendMessage} className="flex gap-1 flex-shrink-0">
-                  <input 
-                    type="text" 
-                    placeholder="Type message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    className="flex-1 bg-black/50 border border-emerald-400/30 rounded-lg px-2 py-1.5 text-white text-xs focus:outline-none focus:border-emerald-400"
-                  />
-                  <button 
-                    type="submit"
-                    className="px-2 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-semibold hover:bg-emerald-500/30 transition-colors flex-shrink-0"
-                  >
-                    Send
-                  </button>
-                </form>
-              </div>
 
-              {/* Files Section */}
-              <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 backdrop-blur-lg rounded-2xl border border-blue-400/20 p-3 flex flex-col" style={{ height: 'calc(50% - 6px)' }}>
-                <h3 className="text-sm font-bold text-blue-300 mb-2 flex items-center gap-2 flex-shrink-0">
-                  <span className="text-lg">📁</span>
-                  Shared Files
-                </h3>
-                <div className="flex-1 bg-black/30 rounded-xl border border-blue-400/20 p-2 mb-2 overflow-y-auto">
-                  <div className="text-center py-4">
-                    <div className="text-2xl mb-1">📤</div>
-                    <p className="text-gray-400 text-xs">No files uploaded yet</p>
-                    <p className="text-gray-500 text-xs mt-1">Drag & drop files here</p>
-                  </div>
+                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                  <form onSubmit={handleSendMessage} className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Type your message..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      className={`flex-1 ${themeClasses.input} rounded-lg px-4 py-2 ${themeClasses.text} focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    />
+                    <button 
+                      type="submit"
+                      className={`px-6 py-2 ${themeClasses.button} text-white font-semibold rounded-lg transition-colors hover:scale-105`}
+                    >
+                      Send
+                    </button>
+                  </form>
                 </div>
-                <button className="w-full py-1.5 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-semibold hover:bg-blue-500/30 transition-colors border border-blue-400/30 flex-shrink-0">
-                  Upload Files
-                </button>
-                             </div>
-             </div>
-           </div>
-             </>
+              </div>
+            </div>
+          )}
+            </>
           )}
         </div>
-    
       </div>
     </div>
   )
