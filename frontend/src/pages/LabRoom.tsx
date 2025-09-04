@@ -261,7 +261,7 @@ const LabRoom: React.FC = () => {
                   {/* Left: Room Title and Code */}
                   <div className="flex items-center gap-4 flex-wrap">
                     <h1 className={`text-2xl md:text-3xl font-bold ${themeClasses.text}`}>
-                      <span className={`${themeClasses.textSecondary}`}>WDL1233</span> Workspace
+                      {roomName} Workspace
                     </h1>
                     <div className={`flex items-center gap-2 ${themeClasses.cardSecondary} rounded-full py-1 px-3`}>
                       <span className={`text-sm ${themeClasses.textMuted}`}>Room Code:</span>
@@ -351,6 +351,13 @@ const LabRoom: React.FC = () => {
                   
                   {/* Right: Leave Room & Theme Toggle */}
                   <div className="flex items-center gap-3">
+                    {/* Expiry Timer */}
+                    <div className={`${themeClasses.cardSecondary} rounded-lg px-3 py-2 ${themeClasses.border} border flex items-center gap-2`}>
+                      <span className="text-yellow-500 text-lg"></span>
+                      <p className={`text-sm font-bold ${themeClasses.text} font-mono`}>
+                        Expires In: {formatTime(timeLeft)}
+                      </p>
+                    </div>
                     <button
                       onClick={() => setIsDarkTheme(!isDarkTheme)}
                       className={`p-2 rounded-full ${themeClasses.card} ${themeClasses.border} border transition-colors hover:scale-105`}
