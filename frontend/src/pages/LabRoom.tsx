@@ -93,18 +93,44 @@ const [newMessage, setNewMessage] = useState("");
 const messagesEndRef = useRef<HTMLDivElement>(null);
 
 // Socket setup
+// Initialize messages state
+// const [messages, setMessages] = useState<Message[]>([]);
+
+// Fetch initial room messages from backend
 useEffect(() => {
-  // Join room when mounted
+  const fetchRoomMessages = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/rooms/code/${roomCode}`);
+      if (!res.ok) throw new Error("Failed to fetch room");
+
+      const room = await res.json();
+
+      const formattedMessages: Message[] = room.messages.map((msg: any) => ({
+        id: msg.id,
+        sender: msg.sender || "System",
+        content: msg.content || "",
+        type: msg.type,
+        timestamp: new Date(msg.timestamp.$date || msg.timestamp),
+      }));
+
+      setMessages(formattedMessages);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchRoomMessages();
+}, [roomCode]);
+
+// Socket setup
+useEffect(() => {
   socket.emit("join-room", { roomCode, user: { name: memberName } });
 
-  // Listen for incoming messages
   socket.on("receive-message", (message: Message) => {
-    // Convert timestamp string to Date object
-    const formattedMessage = {
-      ...message,
-      timestamp: new Date(message.timestamp),
-    };
-    setMessages((prev) => [...prev, formattedMessage]);
+    setMessages((prev) => [
+      ...prev,
+      { ...message, timestamp: new Date(message.timestamp) },
+    ]);
   });
 
   return () => {
@@ -120,26 +146,24 @@ const sendMessage = () => {
     id: Date.now().toString(),
     sender: memberName,
     content: newMessage.trim(),
-    timestamp: new Date(), // always a Date object
+    timestamp: new Date(),
     type: "message",
   };
-
-  console.log("Sending message:", message);
-  console.log("To room:", roomCode);
 
   // Emit to server
   socket.emit("send-message", { roomCode, message });
 
-  // Optimistic update (show immediately)
+  // Optimistic update
   setMessages((prev) => [...prev, message]);
 
   setNewMessage("");
 };
 
-// Scroll to bottom whenever messages update
+// Scroll to bottom on message update
 useEffect(() => {
   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 }, [messages]);
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
