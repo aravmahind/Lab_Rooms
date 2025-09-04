@@ -79,91 +79,92 @@ const LabRoom: React.FC = () => {
   }, [roomCode]);
 
   // Chat functionality state
-const [messages, setMessages] = useState<Message[]>([
-  {
-    id: "1",
-    sender: "System",
-    content: "Welcome to the room! 🎉",
-    timestamp: new Date(Date.now() - 10000),
-    type: "system",
-  },
-]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      sender: "System",
+      content: "Welcome to the room! 🎉",
+      timestamp: new Date(Date.now() - 10000),
+      type: "system",
+    },
+  ]);
 
-const [newMessage, setNewMessage] = useState("");
-const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [newMessage, setNewMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-// Socket setup
-// Initialize messages state
-// const [messages, setMessages] = useState<Message[]>([]);
+  // Socket setup
+  // Initialize messages state
+  // const [messages, setMessages] = useState<Message[]>([]);
 
-// Fetch initial room messages from backend
-useEffect(() => {
-  const fetchRoomMessages = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/rooms/code/${roomCode}`);
-      if (!res.ok) throw new Error("Failed to fetch room");
+  // Fetch initial room messages from backend
+  useEffect(() => {
+    const fetchRoomMessages = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/rooms/code/${roomCode}`
+        );
+        if (!res.ok) throw new Error("Failed to fetch room");
 
-      const room = await res.json();
+        const room = await res.json();
 
-      const formattedMessages: Message[] = room.messages.map((msg: any) => ({
-        id: msg.id,
-        sender: msg.sender || "System",
-        content: msg.content || "",
-        type: msg.type,
-        timestamp: new Date(msg.timestamp.$date || msg.timestamp),
-      }));
+        const formattedMessages: Message[] = room.messages.map((msg: any) => ({
+          id: msg.id,
+          sender: msg.sender || "System",
+          content: msg.content || "",
+          type: msg.type,
+          timestamp: new Date(msg.timestamp.$date || msg.timestamp),
+        }));
 
-      setMessages(formattedMessages);
-    } catch (err) {
-      console.error(err);
-    }
+        setMessages(formattedMessages);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchRoomMessages();
+  }, [roomCode]);
+
+  // Socket setup
+  useEffect(() => {
+    socket.emit("join-room", { roomCode, user: { name: memberName } });
+
+    socket.on("receive-message", (message: Message) => {
+      setMessages((prev) => [
+        ...prev,
+        { ...message, timestamp: new Date(message.timestamp) },
+      ]);
+    });
+
+    return () => {
+      socket.off("receive-message");
+    };
+  }, [roomCode, memberName]);
+
+  // Sending a message
+  const sendMessage = () => {
+    if (!newMessage.trim()) return;
+
+    const message: Message = {
+      id: Date.now().toString(),
+      sender: memberName,
+      content: newMessage.trim(),
+      timestamp: new Date(),
+      type: "message",
+    };
+
+    // Emit to server
+    socket.emit("send-message", { roomCode, message });
+
+    // Optimistic update
+    setMessages((prev) => [...prev, message]);
+
+    setNewMessage("");
   };
 
-  fetchRoomMessages();
-}, [roomCode]);
-
-// Socket setup
-useEffect(() => {
-  socket.emit("join-room", { roomCode, user: { name: memberName } });
-
-  socket.on("receive-message", (message: Message) => {
-    setMessages((prev) => [
-      ...prev,
-      { ...message, timestamp: new Date(message.timestamp) },
-    ]);
-  });
-
-  return () => {
-    socket.off("receive-message");
-  };
-}, [roomCode, memberName]);
-
-// Sending a message
-const sendMessage = () => {
-  if (!newMessage.trim()) return;
-
-  const message: Message = {
-    id: Date.now().toString(),
-    sender: memberName,
-    content: newMessage.trim(),
-    timestamp: new Date(),
-    type: "message",
-  };
-
-  // Emit to server
-  socket.emit("send-message", { roomCode, message });
-
-  // Optimistic update
-  setMessages((prev) => [...prev, message]);
-
-  setNewMessage("");
-};
-
-// Scroll to bottom on message update
-useEffect(() => {
-  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-}, [messages]);
-
+  // Scroll to bottom on message update
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -998,7 +999,13 @@ useEffect(() => {
                     </div>
 
                     <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                      <form onSubmit={sendMessage} className="flex gap-2">
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault(); // Prevent reload
+                          sendMessage(); // Call your send message function
+                        }}
+                        className="flex gap-2"
+                      >
                         <input
                           type="text"
                           placeholder="Type your message..."
@@ -1008,7 +1015,6 @@ useEffect(() => {
                         />
                         <button
                           type="submit"
-                          onClick={sendMessage}
                           className={`px-6 py-2 ${themeClasses.button} text-white font-semibold rounded-lg transition-colors hover:scale-105`}
                         >
                           Send
