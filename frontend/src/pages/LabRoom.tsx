@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { io } from "socket.io-client";
 
-const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
+const socket = io("http://localhost:5000");
 
 interface TeamMember {
   id: string;
@@ -79,57 +79,67 @@ const LabRoom: React.FC = () => {
   }, [roomCode]);
 
   // Chat functionality state
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      sender: "System",
-      content: "Welcome to the room! 🎉",
-      timestamp: new Date(Date.now() - 10000),
-      type: "system",
-    },
-  ]);
-  const [newMessage, setNewMessage] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+const [messages, setMessages] = useState<Message[]>([
+  {
+    id: "1",
+    sender: "System",
+    content: "Welcome to the room! 🎉",
+    timestamp: new Date(Date.now() - 10000),
+    type: "system",
+  },
+]);
 
-  useEffect(() => {
-    // Join room when mounted
-    socket.emit("join-room", { roomCode, user: { name: memberName } });
+const [newMessage, setNewMessage] = useState("");
+const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Listen for messages
-    socket.on("receive-message", (message: Message) => {
-      setMessages((prev) => [...prev, message]);
-    });
+// Socket setup
+useEffect(() => {
+  // Join room when mounted
+  socket.emit("join-room", { roomCode, user: { name: memberName } });
 
-    return () => {
-      socket.off("receive-message");
+  // Listen for incoming messages
+  socket.on("receive-message", (message: Message) => {
+    // Convert timestamp string to Date object
+    const formattedMessage = {
+      ...message,
+      timestamp: new Date(message.timestamp),
     };
-  }, [roomCode, memberName]);
+    setMessages((prev) => [...prev, formattedMessage]);
+  });
 
-  const sendMessage = () => {
-    if (!newMessage.trim()) return;
+  return () => {
+    socket.off("receive-message");
+  };
+}, [roomCode, memberName]);
 
-    const message: Message = {
-      id: Date.now().toString(),
-      sender: memberName,
-      content: newMessage,
-      timestamp: new Date(),
-      type: "message",
-    };
+// Sending a message
+const sendMessage = () => {
+  if (!newMessage.trim()) return;
 
-    // Emit to server
-    socket.emit("send-message", { roomCode, message });
-
-    // Optimistic update (show immediately)
-    setMessages((prev) => [...prev, message]);
-
-    setNewMessage("");
+  const message: Message = {
+    id: Date.now().toString(),
+    sender: memberName,
+    content: newMessage.trim(),
+    timestamp: new Date(), // always a Date object
+    type: "message",
   };
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  console.log("Sending message:", message);
+  console.log("To room:", roomCode);
 
+  // Emit to server
+  socket.emit("send-message", { roomCode, message });
 
+  // Optimistic update (show immediately)
+  setMessages((prev) => [...prev, message]);
+
+  setNewMessage("");
+};
+
+// Scroll to bottom whenever messages update
+useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+}, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -139,21 +149,21 @@ const LabRoom: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
+  // const handleSendMessage = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (!newMessage.trim()) return;
 
-    const message: Message = {
-      id: Date.now().toString(),
-      sender: memberName,
-      content: newMessage.trim(),
-      timestamp: new Date(),
-      type: "message",
-    };
+  //   const message: Message = {
+  //     id: Date.now().toString(),
+  //     sender: memberName,
+  //     content: newMessage.trim(),
+  //     timestamp: new Date(),
+  //     type: "message",
+  //   };
 
-    setMessages((prev) => [...prev, message]);
-    setNewMessage("");
-  };
+  //   setMessages((prev) => [...prev, message]);
+  //   setNewMessage("");
+  // };
 
   useEffect(() => {
     const validateRoom = async () => {
@@ -964,7 +974,7 @@ const LabRoom: React.FC = () => {
                     </div>
 
                     <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                      <form onSubmit={handleSendMessage} className="flex gap-2">
+                      <form onSubmit={sendMessage} className="flex gap-2">
                         <input
                           type="text"
                           placeholder="Type your message..."
