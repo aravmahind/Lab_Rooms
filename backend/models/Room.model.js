@@ -1,4 +1,26 @@
-import mongoose from 'mongoose';
+import mongoose from 'mongoose'
+
+const messageSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true }, 
+    sender: { type: String, required: true }, 
+    content: { type: String, required: true },
+    timestamp: { type: Date, default: Date.now },
+    type: { type: String, enum: ['message', 'system'], default: 'message' }
+  },
+  { _id: false }
+)
+
+// Member schema for room participants
+const memberSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true }, 
+    name: { type: String, required: true }, 
+    isOnline: { type: Boolean, default: true },
+    joinedAt: { type: Date, default: Date.now }
+  },
+  { _id: false }
+)
 
 const roomSchema = new mongoose.Schema(
   {
@@ -10,29 +32,21 @@ const roomSchema = new mongoose.Schema(
       minlength: 5,
       maxlength: 6
     },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    },
-    expiresAt: {
-      type: Date,
-      required: true,
-      index: { expireAfterSeconds: 0 } 
-    },
-    password: {
+    name: {
       type: String,
-      required: false,
-      default: null
+      required: true,
+      minlength: 3,
+      maxlength: 50
     },
-    data: {
-      type: mongoose.Schema.Types.Mixed,
-      default: {}
-    }
+    createdAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date, required: true, index: { expireAfterSeconds: 0 } },
+    password: { type: String, default: null },
+    data: { type: mongoose.Schema.Types.Mixed, default: {} },
+    members: { type: [memberSchema], default: [] },
+    messages: [messageSchema]
   },
-  {
-    versionKey: false
-  }
-);
+  { versionKey: false }
+)
 
-const Room = mongoose.model('Room', roomSchema);
-export default Room;
+const Room = mongoose.model('Room', roomSchema)
+export default Room

@@ -69,6 +69,12 @@ const JoinRoom: React.FC = () => {
         return
       }
 
+      await fetch(`${import.meta.env.VITE_API_URL}/rooms/${room.code}/members`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim() })
+    })
+
       // Navigate to the room
       const roomNameParam = room.data?.roomName || 'Untitled Room'
       const hostNameParam = room.data?.hostName || 'Anonymous Host'
