@@ -87,20 +87,16 @@ const JoinRoom: React.FC = () => {
     }
   }
 
-  const handleBackToHome = () => {
-    navigate('/')
-  }
-
   return (
-    <div className="min-h-screen relative overflow-hidden bg-black">
+    <div className="min-h-screen relative overflow-hidden bg-gray-950">
       {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-cyan-900/20 to-blue-900/20">
+      <div className="absolute inset-0 bg-gray-950">
         {/* Floating Particles */}
         <div className="absolute inset-0">
           {[...Array(30)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-1 h-1 bg-cyan-400/30 rounded-full animate-pulse"
+              className="absolute w-1 h-1 bg-blue-500/20 rounded-full animate-pulse"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
@@ -116,8 +112,8 @@ const JoinRoom: React.FC = () => {
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
           backgroundImage: `
-            linear-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px)
+            linear-gradient(rgba(37, 99, 235, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(37, 99, 235, 0.1) 1px, transparent 1px)
           `,
           backgroundSize: '50px 50px'
         }} />
@@ -128,21 +124,22 @@ const JoinRoom: React.FC = () => {
           {/* Modern Glass Card Design */}
           <div className="relative">
             {/* Animated Background Blobs */}
-            <div className="absolute -top-2 -left-2 w-12 h-12 md:w-16 md:h-16 bg-cyan-400/20 rounded-full blur-xl animate-pulse" />
-            <div className="absolute -bottom-2 -right-2 w-16 h-16 md:w-20 md:h-20 bg-emerald-400/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1s' }} />
+            <div className="absolute -top-2 -left-2 w-12 h-12 md:w-16 md:h-16 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute -bottom-2 -right-2 w-16 h-16 md:w-20 md:h-20 bg-blue-400/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1s' }} />
             
             {/* Main Card Container */}
-            <div className="relative bg-white/5 backdrop-blur-2xl rounded-xl md:rounded-2xl shadow-2xl border border-white/10 overflow-hidden">
+            <div className="relative bg-gray-900/80 backdrop-blur-2xl rounded-xl md:rounded-2xl shadow-2xl border border-gray-800 overflow-hidden">
               {/* Top Accent Bar */}
-              <div className="h-1 bg-gradient-to-r from-cyan-400 via-emerald-400 to-blue-400" />
+              <div className="h-1 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-600" />
               
               <div className="p-4 md:p-6">
+                {/* Remove Back Arrow */}
                 {/* Header */}
                 <div className="text-center mb-6">
-                  <h1 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 mb-2">
+                  <h1 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600 mb-2">
                     Join Room
                   </h1>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-gray-300 text-sm">
                     Enter the room code to join your team's workspace
                   </p>
                 </div>
@@ -158,44 +155,44 @@ const JoinRoom: React.FC = () => {
                 <form onSubmit={handleJoinRoom} className="space-y-4 md:space-y-5">
                   {/* Your Name */}
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-emerald-300 font-bold text-sm flex items-center gap-2">
-                      <span className="text-base md:text-lg">👤</span>
+                    <Label htmlFor="name" className="text-blue-300 font-bold text-sm flex items-center gap-2">
+                      <span className="text-base md:text-lg"></span>
                       Your Name
                     </Label>
                     <div className="relative">
                       <Input
                         id="name"
                         type="text"
-                        placeholder="Enter your name..."
+                        placeholder="Enter your Name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full bg-black/20 backdrop-blur-sm border-2 border-emerald-400/30 text-white placeholder-gray-400 focus:border-emerald-400 focus:ring-emerald-400/30 rounded-lg py-3 px-4 text-sm transition-all duration-300 hover:border-emerald-400/50 hover:bg-black/30"
+                        className="w-full bg-gray-900/40 backdrop-blur-sm border-2 border-blue-500/30 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500/30 rounded-lg py-3 px-4 text-sm transition-all duration-300 hover:border-blue-500/50 hover:bg-gray-900/60"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/5 to-cyan-400/5 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                      <div className="absolute inset-0 bg-blue-500/10 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     </div>
                     {nameError && <p className='text-red-500 text-sm font-bold'>{nameError}</p>}
                   </div>
 
                   {/* Room Code */}
                   <div className="space-y-2">
-                    <Label htmlFor="roomCode" className="text-cyan-300 font-bold text-sm flex items-center gap-2">
-                      <span className="text-base md:text-lg">🔑</span>
+                    <Label htmlFor="roomCode" className="text-blue-300 font-bold text-sm flex items-center gap-2">
+                      <span className="text-base md:text-lg"></span>
                       Room Code
                     </Label>
                     <div className="relative">
                       <Input
                         id="roomCode"
                         type={showRoomCode ? "text" : "password"}
-                        placeholder="Enter room code..."
+                        placeholder="Enter the Room Code"
                         value={roomCode}
                         onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                        className="w-full bg-black/20 backdrop-blur-sm border-2 border-cyan-400/30 text-white placeholder-gray-400 focus:border-cyan-400 focus:ring-cyan-400/30 rounded-lg py-3 px-4 pr-12 text-sm transition-all duration-300 hover:border-cyan-400/50 hover:bg-black/30 font-mono tracking-wider"
+                        className="w-full bg-gray-900/40 backdrop-blur-sm border-2 border-blue-500/30 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500/30 rounded-lg py-3 px-4 pr-12 text-sm transition-all duration-300 hover:border-blue-500/50 hover:bg-gray-900/60 font-mono tracking-wider"
                         maxLength={6}
                       />
                       <button
                         type="button"
                         onClick={() => setShowRoomCode(!showRoomCode)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-cyan-400 transition-colors duration-200"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-400 transition-colors duration-200"
                       >
                         {showRoomCode ? (
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,29 +205,29 @@ const JoinRoom: React.FC = () => {
                           </svg>
                         )}
                       </button>
-                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/5 to-emerald-400/5 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                      <div className="absolute inset-0 bg-blue-500/10 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     </div>
                   </div>
 
                   {/* Optional Password */}
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="text-emerald-300 font-bold text-sm flex items-center gap-2">
-                      <span className="text-base md:text-lg">🔒</span>
+                    <Label htmlFor="password" className="text-blue-300 font-bold text-sm flex items-center gap-2">
+                      <span className="text-base md:text-lg"></span>
                       Password (Optional)
                     </Label>
                     <div className="relative">
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Enter room password if required..."
+                        placeholder="Enter room password if required"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-black/20 backdrop-blur-sm border-2 border-emerald-400/30 text-white placeholder-gray-400 focus:border-emerald-400 focus:ring-emerald-400/30 rounded-lg py-3 px-4 pr-12 text-sm transition-all duration-300 hover:border-emerald-400/50 hover:bg-black/30"
+                        className="w-full bg-gray-900/40 backdrop-blur-sm border-2 border-blue-500/30 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500/30 rounded-lg py-3 px-4 pr-12 text-sm transition-all duration-300 hover:border-blue-500/50 hover:bg-gray-900/60"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-emerald-400 transition-colors duration-200"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-400 transition-colors duration-200"
                       >
                         {showPassword ? (
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,7 +240,7 @@ const JoinRoom: React.FC = () => {
                           </svg>
                         )}
                       </button>
-                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/5 to-cyan-400/5 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                      <div className="absolute inset-0 bg-blue-500/10 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     </div>
                   </div>
 
@@ -252,14 +249,14 @@ const JoinRoom: React.FC = () => {
                     <Button
                       type="submit"
                       disabled={isLoading}
-                      className="flex-1 group relative px-6 py-3 text-base font-bold bg-gradient-to-r from-cyan-500 to-emerald-500 text-black rounded-xl shadow-2xl overflow-hidden transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 group relative px-6 py-3 text-base font-bold bg-blue-600 text-white rounded-xl shadow-2xl overflow-hidden transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
+                      <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
                       <span className="relative z-10 flex items-center justify-center gap-2">
                         {isLoading ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             Joining...
                           </>
                         ) : (
@@ -270,24 +267,16 @@ const JoinRoom: React.FC = () => {
                         )}
                       </span>
                     </Button>
-                    
-                    <Button
-                      type="button"
-                      onClick={handleBackToHome}
-                      className="px-6 py-3 text-base font-bold border-2 border-cyan-400 text-cyan-300 bg-black/50 backdrop-blur-sm rounded-xl shadow-2xl hover:bg-cyan-400/10 transition-all duration-300"
-                    >
-                      Back
-                    </Button>
                   </div>
                 </form>
 
                 {/* Help Text */}
                 <div className="mt-6 text-center">
-                  <p className="text-gray-400 text-xs">
+                  <p className="text-gray-300 text-sm md:text-base font-medium">
                     Don't have a room code?{' '}
                     <button
                       onClick={() => navigate('/create-room')}
-                      className="text-cyan-400 hover:text-cyan-300 transition-colors duration-200 underline"
+                      className="text-blue-400 hover:text-blue-300 transition-colors duration-200 underline font-semibold"
                     >
                       Create a new room
                     </button>
@@ -301,5 +290,6 @@ const JoinRoom: React.FC = () => {
     </div>
   )
 }
+
 
 export default JoinRoom
