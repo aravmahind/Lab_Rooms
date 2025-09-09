@@ -34,6 +34,120 @@ const LabRoom: React.FC = () => {
   const [activeSection, setActiveSection] = useState("code-sharing");
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // State for file sharing
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{name: string, url: string}>>([]);
+
+  // Handle file uploads to Cloudinary
+  const uploadFiles = async () => {
+    if (selectedFiles.length === 0 || isUploading) return;
+    
+    setIsUploading(true);
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const apiKey = import.meta.env.VITE_CLOUDINARY_API_KEY;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'labrooms_uploads';
+
+    if (!cloudName || !apiKey) {
+      console.error('Cloudinary configuration is missing');
+      setIsUploading(false);
+      return;
+    }
+    
+    // Add a small delay to show the loading state
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const uploadPromises = selectedFiles.map(async (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', uploadPreset);
+      formData.append('api_key', apiKey);
+      
+      // Initial progress
+      setUploadProgress(prev => ({
+        ...prev,
+        [file.name]: 5
+      }));
+
+      console.log('Starting upload for:', file.name);
+      
+      try {
+        const response = await fetch(
+          `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Upload failed:', errorText);
+          throw new Error(`Upload failed: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Upload successful:', {
+          name: file.name,
+          url: data.secure_url,
+          size: file.size,
+          type: file.type
+        });
+        
+        // Update progress to 100%
+        setUploadProgress(prev => ({
+          ...prev,
+          [file.name]: 100
+        }));
+        
+        return {
+          name: file.name,
+          url: data.secure_url
+        };
+        
+      } catch (error) {
+        console.error(`Error uploading ${file.name}:`, error);
+        // Update progress to show error state
+        setUploadProgress(prev => ({
+          ...prev,
+          [file.name]: -1 // Use -1 to indicate error state
+        }));
+        throw error;
+      }
+    });
+
+    try {
+      const results = await Promise.allSettled(uploadPromises);
+      
+      // Process successful uploads
+      const successfulUploads = results
+        .filter((result): result is PromiseFulfilledResult<{name: string, url: string}> => 
+          result.status === 'fulfilled' && result.value !== undefined
+        )
+        .map(result => result.value);
+      
+      // Add to uploaded files list
+      if (successfulUploads.length > 0) {
+        setUploadedFiles(prev => [...prev, ...successfulUploads]);
+      }
+      
+      // Log any failed uploads
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(`Failed to upload ${selectedFiles[index]?.name}:`, result.reason);
+        }
+      });
+      
+      // Clear selected files if everything was successful
+      if (successfulUploads.length === selectedFiles.length) {
+        setSelectedFiles([]);
+      }
+      
+    } catch (error) {
+      console.error('Error during file uploads:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   // Countdown timer state
   const [timeLeft, setTimeLeft] = useState(2 * 60 * 60); // 2 hours in seconds
@@ -685,9 +799,21 @@ const LabRoom: React.FC = () => {
                           <input
                             type="file"
                             id="file-upload"
-                            multiple
                             className="hidden"
-                            onChange={handleFileChange}
+                            multiple
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files.length > 0) {
+                                const files = Array.from(e.target.files);
+                                setSelectedFiles(prev => [...prev, ...files]);
+                                // Initialize progress for new files
+                                const newProgress = { ...uploadProgress };
+                                files.forEach(file => {
+                                  newProgress[file.name] = 0;
+                                });
+                                setUploadProgress(newProgress);
+                                e.target.value = ''; // Reset input
+                              }
+                            }}
                           />
                           <label
                             htmlFor="file-upload"
@@ -738,12 +864,105 @@ const LabRoom: React.FC = () => {
                                 </li>
                               ))}
                             </ul>
-                            <div className="flex gap-2 mt-4">
-                              <button
-                                className={`px-4 py-2 ${themeClasses.button} text-white text-sm font-semibold rounded-lg transition-colors`}
-                              >
-                                Upload Files
-                              </button>
+                            <div className="w-full mt-4">
+                              <div className="flex flex-col gap-3">
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => document.getElementById('file-upload')?.click()}
+                                    disabled={isUploading}
+                                    className={`px-4 py-2 ${themeClasses.button} text-white text-sm font-semibold rounded-lg transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                  >
+                                    {isUploading ? 'Uploading...' : 'Add More Files'}
+                                  </button>
+                                  
+                                  {selectedFiles.length > 0 && !isUploading && (
+                                    <button
+                                      onClick={uploadFiles}
+                                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                                    >
+                                      Upload {selectedFiles.length} File{selectedFiles.length > 1 ? 's' : ''}
+                                    </button>
+                                  )}
+                                  
+                                  {isUploading && (
+                                    <button
+                                      onClick={() => {
+                                        // Cancel uploads if needed
+                                        setIsUploading(false);
+                                        setUploadProgress({});
+                                      }}
+                                      className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-lg transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                  )}
+                                </div>
+                                
+                                {/* Upload progress */}
+                                {Object.entries(uploadProgress).map(([fileName, progress]) => {
+                                  const isError = progress === -1;
+                                  const isComplete = progress === 100;
+                                  const isUploading = progress > 0 && progress < 100;
+                                  
+                                  return (
+                                    <div key={fileName} className="w-full mb-3">
+                                      <div className="flex justify-between text-xs mb-1">
+                                        <span className={`truncate max-w-[200px] ${
+                                          isError ? 'text-red-500' : themeClasses.textSecondary
+                                        }`}>
+                                          {fileName}
+                                        </span>
+                                        <span className={isError ? 'text-red-500' : themeClasses.textMuted}>
+                                          {isError ? 'Failed' : `${progress}%`}
+                                        </span>
+                                      </div>
+                                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                                        <div 
+                                          className={`h-2 rounded-full transition-all duration-300 ${
+                                            isError 
+                                              ? 'bg-red-500 w-full' 
+                                              : isComplete 
+                                                ? 'bg-green-500 w-full' 
+                                                : 'bg-blue-500' 
+                                          }`}
+                                          style={{ width: isError || isComplete ? '100%' : `${Math.max(5, progress)}%` }}
+                                        />
+                                      </div>
+                                      {isError && (
+                                        <p className="text-xs text-red-500 mt-1">
+                                          Upload failed. Please try again.
+                                        </p>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                                
+                                {/* Uploaded files list */}
+                                {uploadedFiles.length > 0 && (
+                                  <div className="mt-4">
+                                    <h4 className="text-sm font-medium mb-2">Uploaded Files:</h4>
+                                    <div className="space-y-2">
+                                      {uploadedFiles.map((file, index) => (
+                                        <div key={index} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                                          <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                                          <a 
+                                            href={file.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-blue-500 hover:underline text-sm"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              console.log('Opening file:', file.url);
+                                            }}
+                                          >
+                                            View
+                                          </a>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                               <button
                                 onClick={() => setSelectedFiles([])}
                                 className={`px-4 py-2 ${themeClasses.buttonSecondary} ${themeClasses.textSecondary} text-sm font-semibold rounded-lg transition-colors`}
