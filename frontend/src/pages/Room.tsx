@@ -31,7 +31,7 @@ const Room = () => {
           value={name}
           onChange={e => setName(e.target.value)}
         />
-        <CodeEditor
+        {/* <CodeEditor
           value={code}
           language="python"
           placeholder="Paste or write your code here..."
@@ -46,7 +46,7 @@ const Room = () => {
             minHeight: 120,
           }}
           className="mb-4"
-        />
+        />  */}
         <Button className="w-full bg-[#6366f1] hover:bg-[#6366f1]/90 text-white" onClick={handleSave}>
           Save Snippet
         </Button>
@@ -60,7 +60,7 @@ const Room = () => {
           {snippets.map((snip, idx) => (
             <div key={idx} className="bg-[#23272f] rounded-lg p-4 border border-[#6366f1]/20">
               <div className="font-semibold text-[#6366f1] mb-2">{snip.name}</div>
-              <CodeEditor
+              {/* <CodeEditor
                 value={snip.code}
                 language="python"
                 readOnly
@@ -72,7 +72,7 @@ const Room = () => {
                   borderRadius: '0.5rem',
                   minHeight: 80,
                 }}
-              />
+              /> */}
             </div>
           ))}
         </div>

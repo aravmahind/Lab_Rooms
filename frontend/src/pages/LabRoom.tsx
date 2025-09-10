@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { io } from "socket.io-client";
+import Code_editor from "../components/ui/Code_editor";
+import Whiteboard from "../components/ui/whiteboard";
 
 const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
 
@@ -156,7 +158,7 @@ const LabRoom: React.FC = () => {
     socket.emit("send-message", { roomCode, message });
 
     // Optimistic update
-    setMessages((prev) => [...prev, message]);
+    // setMessages((prev) => [...prev, message]);
 
     setNewMessage("");
   };
@@ -317,9 +319,8 @@ const LabRoom: React.FC = () => {
             <div className="flex items-center justify-center min-h-[50vh]">
               <div className="text-center">
                 <div
-                  className={`w-8 h-8 border-2 ${
-                    isDarkTheme ? "border-blue-400" : "border-blue-500"
-                  } border-t-transparent rounded-full animate-spin mx-auto mb-4`}
+                  className={`w-8 h-8 border-2 ${isDarkTheme ? "border-blue-400" : "border-blue-500"
+                    } border-t-transparent rounded-full animate-spin mx-auto mb-4`}
                 ></div>
                 <p className={`text-lg ${themeClasses.text}`}>
                   Validating room...
@@ -360,13 +361,11 @@ const LabRoom: React.FC = () => {
             <>
               {/* Navigation Bar - Modern Glass Effect */}
               <div
-                className={`${themeClasses.card} border-b ${
-                  themeClasses.border
-                } shadow-lg rounded-2xl p-4 mb-6 transition-all duration-1000 ${
-                  isLoaded
+                className={`${themeClasses.card} border-b ${themeClasses.border
+                  } shadow-lg rounded-2xl p-4 mb-6 transition-all duration-1000 ${isLoaded
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 translate-y-10"
-                }`}
+                  }`}
               >
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                   {/* Left: Room Title and Code */}
@@ -430,11 +429,10 @@ const LabRoom: React.FC = () => {
                       </button>
                       <button
                         onClick={copyRoomCode}
-                        className={`p-1 rounded-full transition-all duration-200 ${
-                          copyStatus === "copied"
-                            ? "bg-green-500 text-white"
-                            : `${themeClasses.button} text-white`
-                        }`}
+                        className={`p-1 rounded-full transition-all duration-200 ${copyStatus === "copied"
+                          ? "bg-green-500 text-white"
+                          : `${themeClasses.button} text-white`
+                          }`}
                         title="Copy Room Code"
                       >
                         {copyStatus === "copied" ? (
@@ -476,11 +474,10 @@ const LabRoom: React.FC = () => {
                   >
                     <button
                       onClick={() => setActiveSection("code-sharing")}
-                      className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${
-                        activeSection === "code-sharing"
-                          ? `${themeClasses.button} text-white shadow-sm`
-                          : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
-                      }`}
+                      className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${activeSection === "code-sharing"
+                        ? `${themeClasses.button} text-white shadow-sm`
+                        : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
+                        }`}
                     >
                       <svg
                         className="w-4 h-4"
@@ -499,11 +496,10 @@ const LabRoom: React.FC = () => {
                     </button>
                     <button
                       onClick={() => setActiveSection("whiteboard")}
-                      className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${
-                        activeSection === "whiteboard"
-                          ? `${themeClasses.button} text-white shadow-sm`
-                          : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
-                      }`}
+                      className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${activeSection === "whiteboard"
+                        ? `${themeClasses.button} text-white shadow-sm`
+                        : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
+                        }`}
                     >
                       <svg
                         className="w-4 h-4"
@@ -522,11 +518,10 @@ const LabRoom: React.FC = () => {
                     </button>
                     <button
                       onClick={() => setActiveSection("file-sharing")}
-                      className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${
-                        activeSection === "file-sharing"
-                          ? `${themeClasses.button} text-white shadow-sm`
-                          : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
-                      }`}
+                      className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${activeSection === "file-sharing"
+                        ? `${themeClasses.button} text-white shadow-sm`
+                        : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
+                        }`}
                     >
                       <svg
                         className="w-4 h-4"
@@ -601,17 +596,16 @@ const LabRoom: React.FC = () => {
 
               {/* Main Content Area: Code Editor, Whiteboard, or File Sharing */}
               <div
-                className={`transition-all duration-1000 delay-200 ${
-                  isLoaded
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-10"
-                }`}
+                className={`transition-all duration-1000 delay-200 ${isLoaded
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-10"
+                  }`}
               >
                 <div
-                  className={`${themeClasses.card} rounded-2xl ${themeClasses.border} border p-6 shadow-lg`}
-                  style={{ minHeight: "calc(100vh - 150px)" }}
+                  className={`${themeClasses.card} rounded-2xl ${themeClasses.border} border p-6 shadow-lg flex flex-col`}
+                  style={{ minHeight: "calc(100vh - 150px)", height: "calc(100vh - 150px)" }}
                 >
-                  <div className="flex flex-col h-full">
+                  <div className="flex flex-col flex-1">
                     {/* DYNAMIC HEADER */}
                     <div className="flex items-center justify-between mb-4">
                       <h3
@@ -623,9 +617,16 @@ const LabRoom: React.FC = () => {
                           </>
                         )}
                         {activeSection === "whiteboard" && (
-                          <>
-                            <span className="text-xl">🎨</span> Whiteboard
-                          </>
+                          <div
+                            className={`flex-1 ${themeClasses.cardSecondary} rounded-xl ${themeClasses.border} border flex items-center justify-center`}
+                          >
+                           {/* <div className="text-center">
+                              <p className={`text-2xl ${themeClasses.text}`}>🎨</p>
+                              <p className={`${themeClasses.textSecondary} mt-2`}>
+                                Whiteboard feature coming soon!
+                              </p>
+                            </div>*/}
+                          </div>
                         )}
                         {activeSection === "file-sharing" && (
                           <>
@@ -649,22 +650,12 @@ const LabRoom: React.FC = () => {
 
                     {/* DYNAMIC CONTENT */}
                     {activeSection === "code-sharing" && (
-                      <div
-                        className={`flex-1 ${themeClasses.cardSecondary} rounded-xl ${themeClasses.border} border overflow-hidden`}
-                      >
-                        <textarea
-                          className={`w-full h-full ${themeClasses.cardSecondary} ${themeClasses.text} p-4 resize-none focus:outline-none text-sm font-mono leading-relaxed`}
-                          placeholder={`// Welcome to LabRooms collaborative workspace!
-// Start coding below...`}
-                          defaultValue={`function welcomeToLabRooms() {
-  console.log("Hello, team! Let's build something amazing together!");
-}`}
-                          style={{ minHeight: "calc(100vh - 250px)" }}
-                        />
+                      <div className="flex-1 w-full min-h-0">
+                        <Code_editor />
                       </div>
                     )}
 
-                    {activeSection === "whiteboard" && (
+                    {/* {activeSection === "whiteboard" && (
                       <div
                         className={`flex-1 ${themeClasses.cardSecondary} rounded-xl ${themeClasses.border} border flex items-center justify-center`}
                       >
@@ -674,6 +665,13 @@ const LabRoom: React.FC = () => {
                             Whiteboard feature coming soon!
                           </p>
                         </div>
+                      </div>
+                    )} */}
+
+                    {activeSection === 'whiteboard' && (
+                      <div className="flex-1 w-full min-h-0">
+                        {/* Make sure roomId exists before rendering the component */}
+                        {roomId && <Whiteboard roomId={roomId} isDarkTheme={isDarkTheme} />}
                       </div>
                     )}
 
@@ -886,15 +884,14 @@ const LabRoom: React.FC = () => {
                                 Joined{" "}
                                 {Math.floor(
                                   (Date.now() - member.joinedAt.getTime()) /
-                                    60000
+                                  60000
                                 )}{" "}
                                 min ago
                               </p>
                             </div>
                             <div
-                              className={`w-2 h-2 rounded-full ${
-                                member.isOnline ? "bg-green-500" : "bg-gray-400"
-                              }`}
+                              className={`w-2 h-2 rounded-full ${member.isOnline ? "bg-green-500" : "bg-gray-400"
+                                }`}
                             ></div>
                           </div>
                         ))}
@@ -956,9 +953,8 @@ const LabRoom: React.FC = () => {
                         {messages.map((message) => (
                           <div
                             key={message.id}
-                            className={`${
-                              message.type === "system" ? "text-center" : ""
-                            }`}
+                            className={`${message.type === "system" ? "text-center" : ""
+                              }`}
                           >
                             {message.type === "system" ? (
                               <div
