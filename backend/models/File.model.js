@@ -33,8 +33,8 @@ const fileSchema = new mongoose.Schema({
       required: true
     }
   },
-  roomCode: {
-    type: String,
+  room: {
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'Room'
   },
@@ -47,7 +47,7 @@ const fileSchema = new mongoose.Schema({
 });
 
 // Index for faster queries
-fileSchema.index({ roomCode: 1, createdAt: -1 });
+fileSchema.index({ room: 1, createdAt: -1 });
 
 const File = mongoose.model('File', fileSchema);
 export default File;

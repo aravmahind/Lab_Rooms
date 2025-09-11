@@ -15,7 +15,6 @@ dotenv.config();
 connectDB();
 
 // Route files
-import authRoutes from './routes/auth.js';
 import roomRoutes from './routes/rooms.js';
 import fileRoutes from './routes/files.js';
 

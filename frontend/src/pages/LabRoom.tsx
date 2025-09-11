@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { io } from "socket.io-client";
 import Code_editor from "../components/ui/Code_editor";
 import Whiteboard from "../components/ui/whiteboard";
+import axios from "axios";
 
 const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
 
@@ -43,21 +44,17 @@ const LabRoom: React.FC = () => {
   // Handle file uploads to Cloudinary
   const uploadFiles = async () => {
     if (selectedFiles.length === 0 || isUploading) return;
-    
     setIsUploading(true);
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
     const apiKey = import.meta.env.VITE_CLOUDINARY_API_KEY;
     const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'labrooms_uploads';
-
     if (!cloudName || !apiKey) {
       console.error('Cloudinary configuration is missing');
       setIsUploading(false);
       return;
     }
-    
     // Add a small delay to show the loading state
     await new Promise(resolve => setTimeout(resolve, 200));
-
     const uploadPromises = selectedFiles.map(async (file) => {
       const formData = new FormData();
       formData.append('file', file);
@@ -94,13 +91,28 @@ const LabRoom: React.FC = () => {
           size: file.size,
           type: file.type
         });
-        
+
         // Update progress to 100%
         setUploadProgress(prev => ({
           ...prev,
           [file.name]: 100
         }));
-        
+
+        // Send file details to backend to store in MongoDB
+        try {
+          await axios.post(`${import.meta.env.VITE_API_URL}/files/${roomId}/upload`, {
+            filename: file.name,
+            url: data.secure_url,
+            fileType: file.type.split('/')[0],
+            mimeType: file.type,
+            size: file.size,
+            uploader: { id: 'frontend', name: memberName },
+            publicId: data.public_id
+          });
+        } catch (err) {
+          console.error('Failed to store file in MongoDB:', err);
+        }
+
         return {
           name: file.name,
           url: data.secure_url
@@ -157,7 +169,7 @@ const LabRoom: React.FC = () => {
   // Get room name and host name from URL parameters
   const roomName = searchParams.get("roomName") || "Untitled Room";
   const hostName = searchParams.get("hostName") || "Anonymous Host";
-  const memberName = searchParams.get("memberName") || "Anonymous";
+  const memberName = searchParams.get("memberName") || "Host";
 
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   // const [loading, setLoading] = useState(true);
@@ -727,7 +739,7 @@ const LabRoom: React.FC = () => {
                       >
                         {activeSection === "code-sharing" && (
                           <>
-                            <span className="text-xl">📝</span> Code Editor
+                            <span className="text-xl"></span> Share Code
                           </>
                         )}
                         {activeSection === "whiteboard" && (
