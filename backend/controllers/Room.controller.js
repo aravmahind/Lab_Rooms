@@ -4,7 +4,6 @@ import ErrorResponse from '../utils/errorResponse.js';
 import { generateRoomCode } from '../utils/generateRoomCode.js';
 import mongoose from 'mongoose';
 
-// Get all rooms (supports query, select, sort, pagination)
 export const getRooms = async (req, res, next) => {
   try {
     const reqQuery = { ...req.query };
@@ -265,19 +264,170 @@ export const addFileToRoom = async (req, res, next) => {
 // Get members of room
 export const getMembersOfRoom = async (req, res) => {
   try {
-    const room = await Room.findById(req.params.id).populate('members.user');
+    const room = await Room.findOne({ code: req.params.code });
     if (!room) {
-      return res.status(404).json({ error: 'Room not found' });
+      return res.status(404).json({ success: false, error: 'Room not found' });
     }
-    res.status(200).json(room.members);
+    res.status(200).json({ success: true, data: room.members });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error getting room members:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 };
+
+export const uploadFile = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return next(new ErrorResponse("Please upload a file", 400));
+    }
+
+    const room = await Room.findOne({ code: req.params.roomCode });
+    if (!room) {
+      return next(new ErrorResponse(`Room with code ${req.params.roomCode} not found`, 404));
+    }
+
+    // Upload to Cloudinary
+    const result = await cloudinary.v2.uploader.upload(req.file.path, {
+      folder: "labrooms",
+      resource_type: "auto", // auto-detects image, video, raw
+    });
+
+    // Save file to MongoDB
+    const file = new File({
+      filename: req.file.originalname,
+      url: result.secure_url,          // ✅ Cloudinary hosted URL
+      fileType: getFileType(req.file.mimetype),
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      uploader: {
+        id: req.user ? req.user.id : "anonymous",
+        name: req.user ? req.user.name : "Anonymous",
+      },
+      room: room._id,
+      publicId: result.public_id,      // ✅ Cloudinary public ID
+    });
+
+    await file.save();
+
+    // Link file to room
+    room.files.push(file._id);
+    await room.save();
+
+    res.status(201).json({ success: true, data: file });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Save file metadata after frontend Cloudinary upload
+export const saveFileMeta = async (req, res, next) => {
+  try {
+    const { filename, url, fileType, mimeType, size, uploader, publicId } = req.body;
+    if (!filename || !url || !fileType || !mimeType || !size || !uploader || !publicId) {
+      return res.status(400).json({ error: "Missing required file details" });
+    }
+
+    const room = await Room.findOne({ code: req.params.roomCode });
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    const file = await File.create({
+      filename,
+      url,
+      fileType,
+      mimeType,
+      size,
+      uploader,
+      room: room._id,
+      publicId,
+    });
+
+    room.files.push(file._id);
+    await room.save();
+
+    res.status(201).json({ success: true, data: file });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get all files for a room
+export const getRoomFiles = async (req, res, next) => {
+  try {
+    const room = await Room.findOne({ code: req.params.roomCode })
+      .populate('files');
+    
+    if (!room) {
+      return next(new ErrorResponse(`Room with code ${req.params.roomCode} not found`, 404));
+    }
+
+    res.status(200).json({ success: true, count: room.files.length, data: room.files });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Delete a file
+export const deleteFile = async (req, res, next) => {
+  try {
+    const file = await File.findById(req.params.fileId);
+    
+    if (!file) {
+      return next(new ErrorResponse(`File not found with id ${req.params.fileId}`, 404));
+    }
+
+    // Check if user is authorized (room admin or file uploader)
+    const room = await Room.findOne({ _id: file.room });
+    const isAdmin = room.admin.toString() === req.user.id;
+    const isOwner = file.uploader.id === req.user.id;
+    
+    if (!isAdmin && !isOwner) {
+      return next(new ErrorResponse('Not authorized to delete this file', 401));
+    }
+
+    // Remove file from room
+    await Room.updateOne(
+      { _id: file.room },
+      { $pull: { files: file._id } }
+    );
+
+    // Delete file from storage (you'll need to implement this)
+    // await deleteFromCloudinary(file.publicId);
+
+    // Delete file document
+    await file.remove();
+
+    res.status(200).json({ success: true, data: {} });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Helper function to determine file type from mime type
+function getFileType(mimeType) {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType === 'application/pdf') return 'pdf';
+  if (
+    mimeType === 'text/plain' || 
+    mimeType === 'text/markdown' || 
+    mimeType === 'text/x-python' || 
+    mimeType === 'application/javascript' ||
+    mimeType === 'text/css' ||
+    mimeType === 'text/html'
+  ) return 'text';
+  if (
+    mimeType === 'application/zip' || 
+    mimeType === 'application/x-rar-compressed' || 
+    mimeType === 'application/x-7z-compressed' ||
+    mimeType === 'application/x-tar' ||
+    mimeType === 'application/gzip'
+  ) return 'archive';
+  return 'document';
+}
 
 // Export all required functions with their aliases
 export {
   addMember as addMemberToRoom,
   getRoom as getRoomById,
-  
 };

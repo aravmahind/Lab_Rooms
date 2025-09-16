@@ -2,19 +2,98 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { createRoom, getRooms, getRoomById, deleteRoom, getRoomByCode, addMemberToRoom, getMembersOfRoom } from './controllers/Room.controller.js';
-import Room from './models/Room.model.js';
+import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
+import path from 'path';
 
+import roomRoutes from './routes/rooms.js';
+import fileRoutes from './routes/files.js';
+import authRoutes from './routes/auth.js';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/')
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname))
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  fileFilter: (req, file, cb) => {
+    // Accept common file types
+    const filetypes = /jpeg|jpg|png|gif|pdf|doc|docx|txt|md|csv|xls|xlsx|ppt|pptx|zip|rar|7z|tar|gz|js|jsx|ts|tsx|json|css|html|xml|yaml|yml/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error('File type not allowed'));
+  }
+});
+
+// Import controllers
+import { 
+  getRooms,
+  createRoom,
+  getRoomByCode, 
+  getRoomById, 
+  deleteRoom, 
+  addMemberToRoom, 
+  getMembersOfRoom 
+} from './controllers/Room.controller.js';
+
+// Import models
+import Room from './models/Room.model.js';
+
+// Import middleware
+import { protect } from './middleware/auth.js';
+import errorHandler from './middleware/error.js';
+// Import config
+import connectDB from './config/db.js';
+
+// Load env vars
 dotenv.config();
+
+// Connect to database
+connectDB();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cookieParser());
+
+// Enable CORS
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+
+// Dev logging middleware
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
+// File upload middleware
+app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
 
 // MongoDB connection
 mongoose
@@ -22,15 +101,22 @@ mongoose
   .then(() => console.log('✅ Connected to MongoDB'))
   .catch((error) => console.error('❌ MongoDB connection error:', error));
 
-// Routes
-app.post('/rooms', createRoom);
+// Mount routes
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/rooms', roomRoutes);
+app.use('/api/v1/files', fileRoutes);
+
+// Legacy routes (for backward compatibility)
 app.get('/rooms', getRooms);
 app.get('/rooms/code/:code', getRoomByCode);
 app.get('/rooms/:id', getRoomById);
 app.delete('/rooms/:id', deleteRoom);
-
+app.post('/rooms', createRoom);
 app.post('/rooms/:code/members', addMemberToRoom);
 app.get('/rooms/:code/members', getMembersOfRoom);
+
+// Error handler middleware
+app.use(errorHandler);
 
 // Create HTTP server and attach Socket.IO
 const server = createServer(app);

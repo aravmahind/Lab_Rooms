@@ -4,6 +4,8 @@ import { io } from "socket.io-client";
 import Code_editor from "../components/ui/Code_editor";
 import Whiteboard from "../components/ui/whiteboard";
 import axios from "axios";
+import { FiFile, FiImage, FiMusic, FiVideo, FiCode } from 'react-icons/fi';
+import { BsFileEarmarkPdf, BsFileEarmarkWord, BsFileEarmarkExcel, BsFileEarmarkPpt, BsFileZip } from 'react-icons/bs';
 
 const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
 
@@ -39,7 +41,34 @@ const LabRoom: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // State for file sharing
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
-  const [uploadedFiles, setUploadedFiles] = useState<Array<{name: string, url: string}>>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string, url: string }>>([]);
+  const [roomFiles, setRoomFiles] = useState<Array<{
+    _id: string;
+    filename: string;
+    url: string;
+    fileType: string;
+    mimeType: string;
+    size: number;
+    uploader: { id: string; name: string };
+    createdAt: string;
+  }>>([]);
+
+  // Fetch files for the room
+  const fetchRoomFiles = async () => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/files/${roomId}`);
+      setRoomFiles(response.data.data);
+    } catch (error) {
+      console.error('Error fetching room files:', error);
+    }
+  };
+
+  // Call fetchRoomFiles when component mounts
+  useEffect(() => {
+    if (roomId) {
+      fetchRoomFiles();
+    }
+  }, [roomId]);
 
   // Handle file uploads to Cloudinary
   const uploadFiles = async () => {
@@ -60,7 +89,7 @@ const LabRoom: React.FC = () => {
       formData.append('file', file);
       formData.append('upload_preset', uploadPreset);
       formData.append('api_key', apiKey);
-      
+
       // Initial progress
       setUploadProgress(prev => ({
         ...prev,
@@ -68,7 +97,7 @@ const LabRoom: React.FC = () => {
       }));
 
       console.log('Starting upload for:', file.name);
-      
+
       try {
         const response = await fetch(
           `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
@@ -100,7 +129,7 @@ const LabRoom: React.FC = () => {
 
         // Send file details to backend to store in MongoDB
         try {
-          await axios.post(`${import.meta.env.VITE_API_URL}/files/${roomId}/upload`, {
+          await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/files/${roomId}/upload`, {
             filename: file.name,
             url: data.secure_url,
             fileType: file.type.split('/')[0],
@@ -117,7 +146,7 @@ const LabRoom: React.FC = () => {
           name: file.name,
           url: data.secure_url
         };
-        
+
       } catch (error) {
         console.error(`Error uploading ${file.name}:`, error);
         // Update progress to show error state
@@ -131,31 +160,32 @@ const LabRoom: React.FC = () => {
 
     try {
       const results = await Promise.allSettled(uploadPromises);
-      
+
       // Process successful uploads
       const successfulUploads = results
-        .filter((result): result is PromiseFulfilledResult<{name: string, url: string}> => 
+        .filter((result): result is PromiseFulfilledResult<{ name: string, url: string }> =>
           result.status === 'fulfilled' && result.value !== undefined
         )
         .map(result => result.value);
-      
+
       // Add to uploaded files list
       if (successfulUploads.length > 0) {
         setUploadedFiles(prev => [...prev, ...successfulUploads]);
       }
-      
+
       // Log any failed uploads
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
           console.error(`Failed to upload ${selectedFiles[index]?.name}:`, result.reason);
         }
       });
-      
-      // Clear selected files if everything was successful
-      if (successfulUploads.length === selectedFiles.length) {
+
+      // Clear selected files if everything was successful and refresh file list
+      if (successfulUploads.length > 0) {
         setSelectedFiles([]);
+        await fetchRoomFiles();
       }
-      
+
     } catch (error) {
       console.error('Error during file uploads:', error);
     } finally {
@@ -211,7 +241,7 @@ const LabRoom: React.FC = () => {
     {
       id: "1",
       sender: "System",
-      content: "Welcome to the room! 🎉",
+      content: "Welcome to the room! ",
       timestamp: new Date(Date.now() - 10000),
       type: "system",
     },
@@ -348,7 +378,7 @@ const LabRoom: React.FC = () => {
                   {
                     id: `join-${Date.now()}`,
                     sender: "System",
-                    content: `${memberName} joined the room 👋`,
+                    content: `${memberName} joined the room `,
                     timestamp: new Date(),
                     type: "system",
                   },
@@ -458,7 +488,7 @@ const LabRoom: React.FC = () => {
           {!isValidating && !roomExists && (
             <div className="flex items-center justify-center min-h-[50vh]">
               <div className="text-center max-w-md">
-                <div className="text-6xl mb-4">🚫</div>
+                <div className="text-6xl mb-4"></div>
                 <h1 className={`text-2xl font-bold text-red-500 mb-2`}>
                   Room Not Found
                 </h1>
@@ -528,7 +558,7 @@ const LabRoom: React.FC = () => {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               strokeWidth={2}
-                              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 0110.586 10.586z"
                             />
                           </svg>
                         ) : (
@@ -728,7 +758,7 @@ const LabRoom: React.FC = () => {
                   }`}
               >
                 <div
-                  className={`${themeClasses.card} rounded-2xl ${themeClasses.border} border p-6 shadow-lg flex flex-col`}
+                  className={`${themeClasses.card} rounded-2xl ${themeClasses.border} border shadow-lg flex flex-col`}
                   style={{ minHeight: "calc(100vh - 150px)", height: "calc(100vh - 150px)" }}
                 >
                   <div className="flex flex-col flex-1">
@@ -746,7 +776,7 @@ const LabRoom: React.FC = () => {
                           <div
                             className={`flex-1 ${themeClasses.cardSecondary} rounded-xl ${themeClasses.border} border flex items-center justify-center`}
                           >
-                           {/* <div className="text-center">
+                            {/* <div className="text-center">
                               <p className={`text-2xl ${themeClasses.text}`}>🎨</p>
                               <p className={`${themeClasses.textSecondary} mt-2`}>
                                 Whiteboard feature coming soon!
@@ -795,9 +825,153 @@ const LabRoom: React.FC = () => {
                     )} */}
 
                     {activeSection === 'whiteboard' && (
-                      <div className="flex-1 w-full min-h-0">
-                        {/* Make sure roomId exists before rendering the component */}
-                        {roomId && <Whiteboard roomId={roomId} isDarkTheme={isDarkTheme} />}
+                      <Whiteboard roomId={roomCode} />
+                    )}
+
+                    {activeSection === 'file-sharing' && (
+                      <div className="flex-1 flex flex-col">
+                        <div className="p-4 border-b border-gray-700">
+                          <h3 className="text-lg font-medium text-gray-100 mb-4">Upload Files</h3>
+                          <div className="flex flex-col space-y-4">
+                            <div 
+                              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${selectedFiles.length > 0 ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 hover:border-blue-400'}`}
+                              onClick={() => document.getElementById('file-upload')?.click()}
+                            >
+                              <input
+                                id="file-upload"
+                                type="file"
+                                className="hidden"
+                                multiple
+                                onChange={handleFileChange}
+                              />
+                              <div className="space-y-2">
+                                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                                <p className="text-sm text-gray-400">
+                                  <span className="font-medium text-blue-400 hover:text-blue-300">Click to upload</span> or drag and drop
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Any file type up to 50MB
+                                </p>
+                              </div>
+                            </div>
+
+                            {selectedFiles.length > 0 && (
+                              <div className="space-y-2">
+                                <h4 className="text-sm font-medium text-gray-300">Selected Files ({selectedFiles.length})</h4>
+                                <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                                  {selectedFiles.map((file, index) => (
+                                    <div key={index} className="flex items-center justify-between p-2 bg-gray-800 rounded-lg">
+                                      <div className="flex items-center space-x-3">
+                                        <div className="p-2 bg-gray-700 rounded-lg">
+                                          <FileIcon mimeType={file.type} />
+                                        </div>
+                                        <div>
+                                          <p className="text-sm font-medium text-gray-200 truncate max-w-[200px]">
+                                            {file.name}
+                                          </p>
+                                          <p className="text-xs text-gray-400">
+                                            {(file.size / 1024 / 1024).toFixed(2)} MB
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+                                        }}
+                                        className="text-gray-400 hover:text-red-400 p-1"
+                                      >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="flex justify-end space-x-2 pt-2">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedFiles([]);
+                                      const input = document.getElementById('file-upload') as HTMLInputElement;
+                                      if (input) input.value = '';
+                                    }}
+                                    className="px-3 py-1.5 text-sm text-gray-300 hover:text-white"
+                                  >
+                                    Clear All
+                                  </button>
+                                  <button
+                                    onClick={uploadFiles}
+                                    disabled={isUploading}
+                                    className={`px-4 py-1.5 text-sm font-medium rounded-md ${isUploading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
+                                  >
+                                    {isUploading ? 'Uploading...' : `Upload ${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}`}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Room Files Section */}
+                        <div className="flex-1 overflow-hidden flex flex-col">
+                          <div className="p-4 border-b border-gray-700">
+                            <h3 className="text-lg font-medium text-gray-100">Room Files</h3>
+                          </div>
+                          <div className="flex-1 overflow-y-auto p-4">
+                            {roomFiles.length === 0 ? (
+                              <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                                <svg className="w-16 h-16 mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <p className="text-gray-400">No files in this room yet</p>
+                                <p className="text-sm text-gray-500 mt-1">Upload your first file to get started</p>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {roomFiles.map((file) => (
+                                  <div key={file._id} className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-blue-500 transition-colors">
+                                    <div className="p-4">
+                                      <div className="flex items-start space-x-3">
+                                        <div className="p-2 bg-blue-900/30 rounded-lg">
+                                          <FileIcon mimeType={file.mimeType} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-medium text-gray-200 truncate">{file.filename}</p>
+                                          <div className="flex items-center text-xs text-gray-400 mt-1">
+                                            <span>{formatFileSize(file.size)}</span>
+                                            <span className="mx-2">•</span>
+                                            <span>{new Date(file.createdAt).toLocaleDateString()}</span>
+                                          </div>
+                                          <div className="mt-1">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-700 text-gray-300">
+                                              {file.uploader?.name || 'Unknown'}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="bg-gray-700/50 px-4 py-2 flex justify-end space-x-2">
+                                      <a
+                                        href={file.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <svg className="-ml-0.5 mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                        Download
+                                      </a>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
 
@@ -884,7 +1058,7 @@ const LabRoom: React.FC = () => {
                                   >
                                     {isUploading ? 'Uploading...' : 'Add More Files'}
                                   </button>
-                                  
+
                                   {selectedFiles.length > 0 && !isUploading && (
                                     <button
                                       onClick={uploadFiles}
@@ -893,7 +1067,7 @@ const LabRoom: React.FC = () => {
                                       Upload {selectedFiles.length} File{selectedFiles.length > 1 ? 's' : ''}
                                     </button>
                                   )}
-                                  
+
                                   {isUploading && (
                                     <button
                                       onClick={() => {
@@ -907,19 +1081,18 @@ const LabRoom: React.FC = () => {
                                     </button>
                                   )}
                                 </div>
-                                
+
                                 {/* Upload progress */}
                                 {Object.entries(uploadProgress).map(([fileName, progress]) => {
                                   const isError = progress === -1;
                                   const isComplete = progress === 100;
                                   const isUploading = progress > 0 && progress < 100;
-                                  
+
                                   return (
                                     <div key={fileName} className="w-full mb-3">
                                       <div className="flex justify-between text-xs mb-1">
-                                        <span className={`truncate max-w-[200px] ${
-                                          isError ? 'text-red-500' : themeClasses.textSecondary
-                                        }`}>
+                                        <span className={`truncate max-w-[200px] ${isError ? 'text-red-500' : themeClasses.textSecondary
+                                          }`}>
                                           {fileName}
                                         </span>
                                         <span className={isError ? 'text-red-500' : themeClasses.textMuted}>
@@ -927,14 +1100,13 @@ const LabRoom: React.FC = () => {
                                         </span>
                                       </div>
                                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                                        <div 
-                                          className={`h-2 rounded-full transition-all duration-300 ${
-                                            isError 
-                                              ? 'bg-red-500 w-full' 
-                                              : isComplete 
-                                                ? 'bg-green-500 w-full' 
-                                                : 'bg-blue-500' 
-                                          }`}
+                                        <div
+                                          className={`h-2 rounded-full transition-all duration-300 ${isError
+                                              ? 'bg-red-500 w-full'
+                                              : isComplete
+                                                ? 'bg-green-500 w-full'
+                                                : 'bg-blue-500'
+                                            }`}
                                           style={{ width: isError || isComplete ? '100%' : `${Math.max(5, progress)}%` }}
                                         />
                                       </div>
@@ -946,30 +1118,69 @@ const LabRoom: React.FC = () => {
                                     </div>
                                   );
                                 })}
-                                
-                                {/* Uploaded files list */}
-                                {uploadedFiles.length > 0 && (
-                                  <div className="mt-4">
-                                    <h4 className="text-sm font-medium mb-2">Uploaded Files:</h4>
-                                    <div className="space-y-2">
-                                      {uploadedFiles.map((file, index) => (
-                                        <div key={index} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-800 rounded">
-                                          <span className="text-sm truncate max-w-[200px]">{file.name}</span>
-                                          <a 
-                                            href={file.url} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="text-blue-500 hover:underline text-sm"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              console.log('Opening file:', file.url);
-                                            }}
-                                          >
-                                            View
-                                          </a>
+
+                                {/* Room files list */}
+                                <div className="mt-6">
+                                  <h3 className="text-lg font-medium mb-3">Room Files</h3>
+                                  {roomFiles.length === 0 ? (
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">No files in this room yet.</p>
+                                  ) : (
+                                    <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                                      {roomFiles.map((file) => (
+                                        <div 
+                                          key={file._id} 
+                                          className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                        >
+                                          <div className="flex items-center space-x-3">
+                                            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                                              <FileIcon mimeType={file.mimeType} />
+                                            </div>
+                                            <div>
+                                              <p className="text-sm font-medium truncate max-w-[200px]">
+                                                {file.filename}
+                                              </p>
+                                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                {formatFileSize(file.size)} • {new Date(file.createdAt).toLocaleDateString()}
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div className="flex space-x-2">
+                                            <a
+                                              href={file.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-blue-500 hover:underline text-sm px-3 py-1.5 bg-white dark:bg-gray-700 rounded-md text-sm font-medium"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              Download
+                                            </a>
+                                          </div>
                                         </div>
                                       ))}
                                     </div>
+                                  )}
+                                </div>
+
+                                {/* Uploaded files list */}
+                                {uploadedFiles.length > 0 && (
+                                  <div className="mt-4">
+                                    <h4 className="text-sm font-medium mb-2">Recently Uploaded</h4>
+                                    {uploadedFiles.map((file, index) => (
+                                      <div key={index} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                                        <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                                        <a
+                                          href={file.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-500 hover:underline text-sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                          }}
+                                        >
+                                          View
+                                        </a>
+                                      </div>
+                                    ))}
                                   </div>
                                 )}
                               </div>
@@ -1257,6 +1468,77 @@ const LabRoom: React.FC = () => {
       </div>
     </div>
   );
+};
+
+// FileIcon component to display appropriate icon based on file type
+const FileIcon = ({ mimeType }: { mimeType: string }) => {
+  if (!mimeType) return <FiFile className="w-5 h-5 text-gray-400" />;
+  
+  if (mimeType.startsWith('image/')) return <FiImage className="w-5 h-5 text-blue-400" />;
+  if (mimeType.startsWith('audio/')) return <FiMusic className="w-5 h-5 text-purple-400" />;
+  if (mimeType.startsWith('video/')) return <FiVideo className="w-5 h-5 text-red-400" />;
+  
+  // Document types
+  if (mimeType === 'application/pdf') return <BsFileEarmarkPdf className="w-5 h-5 text-red-500" />;
+  
+  // Word documents
+  if (['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(mimeType)) 
+    return <BsFileEarmarkWord className="w-5 h-5 text-blue-600" />;
+  
+  // Excel documents
+  if (['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(mimeType))
+    return <BsFileEarmarkExcel className="w-5 h-5 text-green-600" />;
+  
+  // PowerPoint documents
+  if (['application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'].includes(mimeType))
+    return <BsFileEarmarkPpt className="w-5 h-5 text-orange-500" />;
+  
+  // Archive files
+  if (['application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed'].includes(mimeType))
+    return <BsFileZip className="w-5 h-5 text-yellow-500" />;
+  
+  // Code files
+  if (mimeType.startsWith('text/') || 
+      mimeType.includes('javascript') || 
+      mimeType.includes('json') || 
+      mimeType.includes('xml') ||
+      mimeType.includes('css') ||
+      mimeType.includes('html')) {
+    return <FiFileCode className="w-5 h-5 text-green-400" />;
+  }
+  
+  return <FiFile className="w-5 h-5 text-gray-400" />;
+};
+
+// Helper function to format file size
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+// Helper function to get file type from mime type
+const getFileType = (mimeType: string) => {
+  if (!mimeType) return 'file';
+  
+  const type = mimeType.split('/')[0];
+  if (['image', 'audio', 'video'].includes(type)) return type;
+  
+  if (mimeType.includes('pdf')) return 'pdf';
+  if (mimeType.includes('word') || mimeType.includes('document')) return 'document';
+  if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'spreadsheet';
+  if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return 'presentation';
+  if (mimeType.includes('zip') || mimeType.includes('compressed')) return 'archive';
+  if (mimeType.includes('text') || 
+      mimeType.includes('javascript') || 
+      mimeType.includes('json') || 
+      mimeType.includes('xml') ||
+      mimeType.includes('css') ||
+      mimeType.includes('html')) return 'code';
+  
+  return 'file';
 };
 
 export default LabRoom;

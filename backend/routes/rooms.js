@@ -10,7 +10,7 @@ import {
   removeMember,
   addCodeSnippet,
   addChatMessage
-} from '../controllers/roomController.js';
+} from '../controllers/Room.controller.js';
 import { protect } from '../middleware/auth.js';
 
 // Base route: /api/v1/rooms
