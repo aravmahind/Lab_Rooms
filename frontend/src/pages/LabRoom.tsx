@@ -825,7 +825,7 @@ const LabRoom: React.FC = () => {
                     )} */}
 
                     {activeSection === 'whiteboard' && (
-                      <Whiteboard roomId={roomCode} />
+                      <Whiteboard roomId={roomCode} isDarkTheme={isDarkTheme} userName={memberName} />
                     )}
 
                     {activeSection === 'file-sharing' && (

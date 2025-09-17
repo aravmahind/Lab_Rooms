@@ -127,6 +127,9 @@ const io = new Server(server, {
   },
 });
 
+// Store canvas state per room in memory (for production, use a DB)
+const canvasStates = {};
+
 // Socket.IO events
 io.on('connection', (socket) => {
   console.log('🟢 New client connected:', socket.id);
@@ -157,6 +160,33 @@ io.on('connection', (socket) => {
       console.error('❌ Error saving message:', err);
     }
   });
+
+  // Join the whiteboard room
+  const roomId = socket.handshake.query.roomId;
+  if (roomId) {
+    socket.join(roomId);
+
+    // Send the current canvas state to the new user
+    if (canvasStates[roomId]) {
+      socket.emit('canvasState', canvasStates[roomId]);
+    }
+
+    // Relay drawing events to everyone else in the room
+    socket.on('drawing', (data) => {
+      socket.to(roomId).emit('drawing', data);
+    });
+
+    // Relay clearCanvas event and clear the stored state
+    socket.on('clearCanvas', () => {
+      socket.to(roomId).emit('canvasCleared');
+      canvasStates[roomId] = null;
+    });
+
+    // Save the latest canvas state (as a base64 string)
+    socket.on('saveCanvasState', (canvasState) => {
+      canvasStates[roomId] = canvasState;
+    });
+  }
 
   // Disconnect
   socket.on('disconnect', () => {
