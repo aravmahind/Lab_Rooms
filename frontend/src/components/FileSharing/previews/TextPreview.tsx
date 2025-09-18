@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileType } from '../../../types/file';
+import type { FileType } from '../../../types/file';
 
 interface TextPreviewProps {
   file: FileType;

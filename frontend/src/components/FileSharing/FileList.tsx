@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { FileItem } from './FileItem';
 import { FileUpload } from './FileUpload';
-import { FileType } from '../../types/file';
-import { useSocket } from '../../contexts/SocketContext';
-import { useAuth } from '../../contexts/AuthContext';
+import type { FileType } from '../../types/file';
+// import type { useSocket } from '../../contexts/SocketContext';
+// import type { useAuth } from '../../contexts/AuthContext';
 import { getRoomFiles, deleteFile as deleteFileService } from '../../services/fileService';
 
 interface FileListProps {
@@ -14,8 +14,8 @@ export const FileList: React.FC<FileListProps> = ({ roomCode }) => {
   const [files, setFiles] = useState<FileType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const socket = useSocket();
-  const { user } = useAuth();
+  // const socket = useSocket();
+  // const { user } = useAuth();
 
   const loadFiles = async () => {
     try {

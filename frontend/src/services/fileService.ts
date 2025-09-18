@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { FileType } from '../types/file';
+import type { FileType } from '../types/file';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
@@ -12,10 +12,12 @@ export const getRoomFiles = async (roomCode: string): Promise<FileType[]> => {
 };
 
 // Upload a file to a room
+import type { AxiosProgressEvent } from 'axios';
+
 export const uploadFile = async (
   file: File,
   roomCode: string,
-  onUploadProgress?: (progressEvent: ProgressEvent) => void
+  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
 ): Promise<FileType> => {
   const formData = new FormData();
   formData.append('file', file);

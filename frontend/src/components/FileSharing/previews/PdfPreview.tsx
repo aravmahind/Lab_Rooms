@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
-import { FileType } from '../../../types/file';
+//import { Document, Page, pdfjs } from 'react-pdf';
+import type { FileType } from '../../../types/file';
 
-// Set up PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// // Set up PDF.js worker
+// pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 interface PdfPreviewProps {
   file: FileType;
@@ -64,7 +64,7 @@ export const PdfPreview: React.FC<PdfPreviewProps> = ({ file }) => {
   return (
     <div className="flex flex-col items-center">
       <div className="border rounded overflow-hidden mb-4">
-        <Document
+        {/* <Document
           file={file.url}
           onLoadSuccess={onDocumentLoadSuccess}
           onLoadError={onDocumentLoadError}
@@ -73,14 +73,14 @@ export const PdfPreview: React.FC<PdfPreviewProps> = ({ file }) => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
           }
-        >
-          <Page 
+        > */}
+          {/* <Page 
             pageNumber={pageNumber} 
             width={800}
             renderTextLayer={false}
             renderAnnotationLayer={false}
           />
-        </Document>
+        </Document> */}
       </div>
 
       {numPages && (

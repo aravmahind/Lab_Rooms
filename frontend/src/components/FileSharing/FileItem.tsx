@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileType } from '../../types/file';
+import type { FileType } from '../../types/file';
 import { formatFileSize, formatDate } from '../../utils/fileUtils';
 import { FilePreview } from './FilePreview';
 

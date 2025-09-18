@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileType } from '../../types/file';
+import type { FileType } from '../../types/file';
 import { ImagePreview } from './previews/ImagePreview';
 import { PdfPreview } from './previews/PdfPreview';
 import { TextPreview } from './previews/TextPreview';

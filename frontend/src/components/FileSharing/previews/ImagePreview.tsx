@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileType } from '../../../types/file';
+import type { FileType } from '../../../types/file';
 
 interface ImagePreviewProps {
   file: FileType;

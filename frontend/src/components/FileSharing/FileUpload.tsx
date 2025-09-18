@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
+//import type { useDropzone } from 'react-dropzone';
 import { uploadFile } from '../../services/fileService';
-import { useAuth } from '../../contexts/AuthContext';
+//import { useAuth } from '../../contexts/AuthContext';
 
 interface FileUploadProps {
   roomCode: string;
@@ -36,7 +36,13 @@ export const FileUpload: React.FC<FileUploadProps> = ({ roomCode }) => {
       } catch (err) {
         console.error('Upload error:', err);
         setError(
-          err.response?.data?.message || 'Failed to upload file. Please try again.'
+          (typeof err === 'object' &&
+            err !== null &&
+            'response' in err &&
+            typeof (err as any).response === 'object' &&
+            (err as any).response?.data?.message)
+            ? (err as any).response.data.message
+            : 'Failed to upload file. Please try again.'
         );
       } finally {
         setIsUploading(false);

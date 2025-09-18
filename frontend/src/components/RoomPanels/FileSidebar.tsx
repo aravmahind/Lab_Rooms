@@ -60,7 +60,7 @@ const FileSidebar: React.FC<FileSidebarProps> = ({ open, onClose, roomCode, them
         setFiles(res.data.data || [])
         setLoading(false)
       })
-      .catch(err => {
+      .catch(() => {
         setError('Failed to fetch files')
         setLoading(false)
       })

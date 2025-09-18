@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import CodeEditor from '@uiw/react-textarea-code-editor'
+//import CodeEditor from '@uiw/react-textarea-code-editor'
 import { Button } from '../components/ui/button'
 
 interface CodeSnippet {
