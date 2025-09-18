@@ -181,7 +181,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   initialValue = '',
   initialLanguage = 'javascript',
   onChange,
-  theme = 'labrooms-dark',
+  // theme = 'labrooms-dark',
   readOnly = false,
   showLanguageSelector = true,
   showFileUpload = true,
@@ -200,7 +200,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   const [isEditorReady, setIsEditorReady] = useState(false);
   const [language, setLanguage] = useState(initialLanguage);
   const [code, setCode] = useState(initialValue || DEFAULT_CODE_SAMPLES[initialLanguage] || '');
-  // const [currentTheme, setCurrentTheme] = useState<'vs' | 'vs-dark' | 'hc-black' | 'labrooms-dark'>(theme);
+  const [currentTheme, setCurrentTheme] = useState<'vs' | 'vs-dark' | 'hc-black' | 'labrooms-dark'>(theme);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [modalState, setModalState] = useState({ isOpen: false, message: '', onConfirm: () => {}, onCancel: () => {} });
