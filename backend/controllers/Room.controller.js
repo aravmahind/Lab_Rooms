@@ -3,6 +3,7 @@ import File from '../models/File.model.js';
 import ErrorResponse from '../utils/errorResponse.js';
 import { generateRoomCode } from '../utils/generateRoomCode.js';
 import mongoose from 'mongoose';
+import cloudinary from 'cloudinary';
 
 export const getRooms = async (req, res, next) => {
   try {
@@ -319,28 +320,71 @@ export const uploadFile = async (req, res, next) => {
   }
 };
 
-// Save file metadata after frontend Cloudinary upload
+// Save file metadata after frontend Cloudinary upload or code editor
 export const saveFileMeta = async (req, res, next) => {
   try {
-    const { filename, url, fileType, mimeType, size, uploader, publicId } = req.body;
-    if (!filename || !url || !fileType || !mimeType || !size || !uploader || !publicId) {
-      return res.status(400).json({ error: "Missing required file details" });
-    }
+    const { filename, url, fileType, mimeType, size, uploader, publicId, code } = req.body;
 
+    // Find the room by code
     const room = await Room.findOne({ code: req.params.roomCode });
     if (!room) {
       return res.status(404).json({ message: "Room not found" });
     }
 
+    // If code is present, upload it as a raw file to Cloudinary
+    let fileUrl = url;
+    let filePublicId = publicId;
+    let fileMimeType = mimeType;
+    let fileSize = size;
+
+    if (code) {
+      // Upload code as a raw file to Cloudinary
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.v2.uploader.upload_stream(
+          {
+            resource_type: "raw",
+            folder: "labrooms/code",
+            public_id: filename.replace(/\.[^/.]+$/, ""),
+            overwrite: true,
+          },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+        stream.end(Buffer.from(code, 'utf-8'));
+      });
+
+      // Save file to DB
+      const file = await File.create({
+        filename,
+        url: uploadResult.secure_url,
+        fileType: fileType || 'code',
+        mimeType: uploadResult.resource_type === 'raw' ? 'text/plain' : uploadResult.mime_type,
+        size: uploadResult.bytes,
+        uploader,
+        room: room._id,
+        publicId: uploadResult.public_id,
+      });
+      room.files.push(file._id);
+      await room.save();
+      return res.status(201).json({ success: true, data: file });
+    }
+
+    // Fallback: normal file metadata (Cloudinary direct upload)
+    if (!filename || !fileUrl || !fileType || !fileMimeType || !fileSize || !uploader || !filePublicId) {
+      return res.status(400).json({ error: "Missing required file details" });
+    }
+
     const file = await File.create({
       filename,
-      url,
+      url: fileUrl,
       fileType,
-      mimeType,
-      size,
+      mimeType: fileMimeType,
+      size: fileSize,
       uploader,
       room: room._id,
-      publicId,
+      publicId: filePublicId,
     });
 
     room.files.push(file._id);
@@ -355,14 +399,16 @@ export const saveFileMeta = async (req, res, next) => {
 // Get all files for a room
 export const getRoomFiles = async (req, res, next) => {
   try {
-    const room = await Room.findOne({ code: req.params.roomCode })
-      .populate('files');
-    
+    // Find the room by code
+    const room = await Room.findOne({ code: req.params.roomCode });
     if (!room) {
       return next(new ErrorResponse(`Room with code ${req.params.roomCode} not found`, 404));
     }
 
-    res.status(200).json({ success: true, count: room.files.length, data: room.files });
+    // Find all files with this room's _id
+    const files = await File.find({ room: room._id }).sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, count: files.length, data: files });
   } catch (error) {
     next(error);
   }

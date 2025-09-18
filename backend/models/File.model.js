@@ -13,7 +13,7 @@ const fileSchema = new mongoose.Schema({
   fileType: {
     type: String,
     required: true,
-    enum: ['image', 'document', 'pdf', 'text', 'archive', 'other']
+    enum: ['image', 'document', 'pdf', 'text', 'archive','code', 'other']
   },
   mimeType: {
     type: String,

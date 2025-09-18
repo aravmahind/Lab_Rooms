@@ -8,7 +8,7 @@ import { FiFile, FiImage, FiMusic, FiVideo, FiCode } from 'react-icons/fi';
 import { BsFileEarmarkPdf, BsFileEarmarkWord, BsFileEarmarkExcel, BsFileEarmarkPpt, BsFileZip } from 'react-icons/bs';
 import ChatSidebar from "../components/RoomPanels/ChatSidebar";
 import TeamSidebar from "../components/RoomPanels/TeamSidebar";
-
+import FileSidebar from "../components/RoomPanels/FileSidebar";
 const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
 
 interface TeamMember {
@@ -38,6 +38,7 @@ const LabRoom: React.FC = () => {
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [showTeamPanel, setShowTeamPanel] = useState(false);
   const [showChatPanel, setShowChatPanel] = useState(false);
+  const [showFilePanel, setShowFilePanel] = useState(false); // <-- Add state for FileSidebar
   const [activeSection, setActiveSection] = useState("code-sharing");
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // State for file sharing
@@ -54,6 +55,20 @@ const LabRoom: React.FC = () => {
     uploader: { id: string; name: string };
     createdAt: string;
   }>>([]);
+  const [editorLoadFile, setEditorLoadFile] = useState<{ code: string; filename: string; language?: string } | null>(null);
+
+  const SUPPORTED_LANGUAGES = [
+    { value: 'javascript', label: 'JavaScript', extensions: ['.js', '.jsx'] },
+    { value: 'typescript', label: 'TypeScript', extensions: ['.ts', '.tsx'] },
+    { value: 'python', label: 'Python', extensions: ['.py'] },
+    { value: 'java', label: 'Java', extensions: ['.java'] },
+    { value: 'cpp', label: 'C++', extensions: ['.cpp', '.cc', '.cxx', '.hpp'] },
+    { value: 'c', label: 'C', extensions: ['.c', '.h'] },
+    { value: 'html', label: 'HTML', extensions: ['.html', '.htm'] },
+    { value: 'css', label: 'CSS', extensions: ['.css'] },
+    { value: 'php', label: 'PHP', extensions: ['.php'] },
+    { value: 'shell', label: 'Shell Script', extensions: ['.sh', '.bash'] },
+  ];
 
   // Fetch files for the room
   const fetchRoomFiles = async () => {
@@ -469,6 +484,26 @@ const LabRoom: React.FC = () => {
       : "bg-gray-300 hover:bg-gray-400",
   };
 
+  // Helper to fetch file content from backend (for code files)
+  const fetchFileContent = async (file: any) => {
+    try {
+      const res = await fetch(file.url);
+      const code = await res.text();
+      setEditorLoadFile({
+        code,
+        filename: file.filename,
+        language: (() => {
+          const ext = file.filename.split('.').pop();
+          const lang = SUPPORTED_LANGUAGES.find(l => l.extensions.includes('.' + ext))?.value;
+          return lang || 'javascript';
+        })(),
+      });
+      setActiveSection("code-sharing");
+    } catch (err) {
+      alert('Failed to load file content');
+    }
+  };
+
   return (
     <div
       className={`min-h-screen transition-colors duration-300 ${themeClasses.bg}`}
@@ -811,7 +846,13 @@ const LabRoom: React.FC = () => {
                         {/* DYNAMIC CONTENT */}
                         {activeSection === "code-sharing" && (
                           <div className="flex-1 w-full min-h-0 min-w-0">
-                            <Code_editor />
+                            <Code_editor
+                              roomCode={roomCode}
+                              memberName={memberName}
+                              loadFile={editorLoadFile}
+                              onFileLoaded={() => setEditorLoadFile(null)}
+                            // ...other props as needed...
+                            />
                           </div>
                         )}
 
@@ -828,16 +869,16 @@ const LabRoom: React.FC = () => {
                           </div>
                         )} */}
 
-                    {activeSection === 'whiteboard' && (
-                      <Whiteboard roomId={roomCode} isDarkTheme={isDarkTheme} userName={memberName} />
-                    )}
+                        {activeSection === 'whiteboard' && (
+                          <Whiteboard roomId={roomCode} isDarkTheme={isDarkTheme} userName={memberName} />
+                        )}
 
                         {activeSection === 'file-sharing' && (
                           <div className="flex-1 flex flex-col">
                             <div className="p-4 border-b border-gray-700">
                               <h3 className="text-lg font-medium text-gray-100 mb-4">Upload Files</h3>
                               <div className="flex flex-col space-y-4">
-                                <div 
+                                <div
                                   className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${selectedFiles.length > 0 ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 hover:border-blue-400'}`}
                                   onClick={() => document.getElementById('file-upload')?.click()}
                                 >
@@ -969,6 +1010,18 @@ const LabRoom: React.FC = () => {
                                             </svg>
                                             Download
                                           </a>
+                                          {/* Add View button for code files */}
+                                          {file.mimeType.startsWith('text/') && (
+                                            <button
+                                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                                              onClick={async (e) => {
+                                                e.preventDefault();
+                                                await fetchFileContent(file);
+                                              }}
+                                            >
+                                              View
+                                            </button>
+                                          )}
                                         </div>
                                       </div>
                                     ))}
@@ -1105,10 +1158,10 @@ const LabRoom: React.FC = () => {
                                           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                                             <div
                                               className={`h-2 rounded-full transition-all duration-300 ${isError
-                                                  ? 'bg-red-500 w-full'
-                                                  : isComplete
-                                                    ? 'bg-green-500 w-full'
-                                                    : 'bg-blue-500'
+                                                ? 'bg-red-500 w-full'
+                                                : isComplete
+                                                  ? 'bg-green-500 w-full'
+                                                  : 'bg-blue-500'
                                                 }`}
                                               style={{ width: isError || isComplete ? '100%' : `${Math.max(5, progress)}%` }}
                                             />
@@ -1130,8 +1183,8 @@ const LabRoom: React.FC = () => {
                                       ) : (
                                         <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                                           {roomFiles.map((file) => (
-                                            <div 
-                                              key={file._id} 
+                                            <div
+                                              key={file._id}
                                               className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                                             >
                                               <div className="flex items-center space-x-3">
@@ -1152,7 +1205,7 @@ const LabRoom: React.FC = () => {
                                                   href={file.url}
                                                   target="_blank"
                                                   rel="noopener noreferrer"
-                                                  className="text-blue-500 hover:underline text-sm px-3 py-1.5 bg-white dark:bg-gray-700 rounded-md text-sm font-medium"
+                                                  className="text-blue-500 hover:underline text-sm px-3 py-1.5 bg-white dark:bg-gray-700 rounded-md font-medium"
                                                   onClick={(e) => e.stopPropagation()}
                                                 >
                                                   Download
@@ -1239,24 +1292,49 @@ const LabRoom: React.FC = () => {
                       }}
                     />
                   )}
+                  {showFilePanel && (
+                    <FileSidebar
+                      open={showFilePanel}
+                      onClose={() => setShowFilePanel(false)}
+                      roomCode={roomCode}
+                      themeClasses={{
+                        card: themeClasses.card,
+                        border: themeClasses.border,
+                        cardSecondary: themeClasses.cardSecondary,
+                        text: themeClasses.text,
+                        textMuted: themeClasses.textMuted,
+                        buttonSecondary: themeClasses.buttonSecondary,
+                      }}
+                      onViewFile={fetchFileContent} // <-- Pass the callback
+                    />
+                  )}
                 </div>
               </div>
 
               {/* Right Dock Icons (Meet-like) */}
               <div className="fixed bottom-6 right-6 z-50 flex flex-row gap-3">
                 <button
-                  onClick={() => { setShowTeamPanel(true); setShowChatPanel(false); }}
+                  onClick={() => { setShowTeamPanel(true); setShowChatPanel(false); setShowFilePanel(false); }}
                   className={`w-12 h-12 rounded-full shadow-md flex items-center justify-center transition ${showTeamPanel ? 'bg-blue-600 text-white' : 'bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900'}`}
                   title="People"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197"/></svg>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" /></svg>
                 </button>
                 <button
-                  onClick={() => { setShowChatPanel(true); setShowTeamPanel(false); }}
+                  onClick={() => { setShowChatPanel(true); setShowTeamPanel(false); setShowFilePanel(false); }}
                   className={`w-12 h-12 rounded-full shadow-md flex items-center justify-center transition ${showChatPanel ? 'bg-blue-600 text-white' : 'bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900'}`}
                   title="Chat"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                </button>
+                <button
+                  onClick={() => { setShowFilePanel(true); setShowTeamPanel(false); setShowChatPanel(false); }}
+                  className={`w-12 h-12 rounded-full shadow-md flex items-center justify-center transition ${showFilePanel ? 'bg-blue-600 text-white' : 'bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900'}`}
+                  title="Files"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
                 </button>
               </div>
             </>
@@ -1270,35 +1348,35 @@ const LabRoom: React.FC = () => {
 // FileIcon component to display appropriate icon based on file type
 const FileIcon = ({ mimeType }: { mimeType: string }) => {
   if (!mimeType) return <span className="w-5 h-5 text-gray-400"><FiFile /></span>;
-  
+
   if (mimeType.startsWith('image/')) return <span className="w-5 h-5 text-blue-400"><FiImage /></span>;
   if (mimeType.startsWith('audio/')) return <span className="w-5 h-5 text-purple-400"><FiMusic /></span>;
   if (mimeType.startsWith('video/')) return <span className="w-5 h-5 text-red-400"><FiVideo /></span>;
-  
+
   // Document types
   if (mimeType === 'application/pdf') return <span className="w-5 h-5 text-red-500"><BsFileEarmarkPdf /></span>;
-  
+
   // Word documents
   if ([
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-  ].includes(mimeType)) 
+  ].includes(mimeType))
     return <span className="w-5 h-5 text-blue-600"><BsFileEarmarkWord /></span>;
-  
+
   // Excel documents
   if ([
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   ].includes(mimeType))
     return <span className="w-5 h-5 text-green-600"><BsFileEarmarkExcel /></span>;
-  
+
   // PowerPoint documents
   if ([
     'application/vnd.ms-powerpoint',
     'application/vnd.openxmlformats-officedocument.presentationml.presentation'
   ].includes(mimeType))
     return <span className="w-5 h-5 text-orange-500"><BsFileEarmarkPpt /></span>;
-  
+
   // Archive files
   if ([
     'application/zip',
@@ -1306,19 +1384,19 @@ const FileIcon = ({ mimeType }: { mimeType: string }) => {
     'application/x-7z-compressed'
   ].includes(mimeType))
     return <span className="w-5 h-5 text-yellow-500"><BsFileZip /></span>;
-  
+
   // Code files
   if (
-    mimeType.startsWith('text/') || 
-    mimeType.includes('javascript') || 
-    mimeType.includes('json') || 
+    mimeType.startsWith('text/') ||
+    mimeType.includes('javascript') ||
+    mimeType.includes('json') ||
     mimeType.includes('xml') ||
     mimeType.includes('css') ||
     mimeType.includes('html')
   ) {
     return <span className="w-5 h-5 text-green-400"><FiCode /></span>;
   }
-  
+
   return <span className="w-5 h-5 text-gray-400"><FiFile /></span>;
 };
 
