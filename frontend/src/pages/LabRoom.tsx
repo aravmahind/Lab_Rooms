@@ -244,7 +244,7 @@ const LabRoom: React.FC = () => {
   // Get room name and host name from URL parameters
   const roomName = searchParams.get("roomName") || "Untitled Room";
   const hostName = searchParams.get("hostName") || "Anonymous Host";
-  const memberName = searchParams.get("memberName") || "Host";
+  const memberName = searchParams.get("memberName") || hostName;
 
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   // const [loading, setLoading] = useState(true);

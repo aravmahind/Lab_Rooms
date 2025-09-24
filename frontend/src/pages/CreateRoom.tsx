@@ -15,8 +15,8 @@ const CreateRoom: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
 
-  const [hostNameError, setHostNameError] = useState('');
-  const [roomNameError, setRoomNameError] = useState('');
+  // const [hostNameError, setHostNameError] = useState('');
+  // const [roomNameError, setRoomNameError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
@@ -35,29 +35,29 @@ const CreateRoom: React.FC = () => {
     setIsLoading(true)
 
     // Input Validation
-    const unameRegEx = /^[a-zA-Z][a-zA-Z0-9_]{3,25}$/;
-    const rnameRegEx = /^[a-zA-Z][a-zA-Z0-9 _]{3,25}$/;
+    // const unameRegEx = /^[a-zA-Z][a-zA-Z0-9_]{1,25}$/;
+    // const rnameRegEx = /^[a-zA-Z][a-zA-Z0-9 _]{1,25}$/;
     const passwordRegEx = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
     let errorFlag = false;
 
-    if(!rnameRegEx.test(roomName.trim())) {
-      setRoomNameError(() => "Invalid Room Name");
-      errorFlag = true;
-      setIsLoading(false);
-    }
-    else {
-      setRoomNameError("");
-    }
+    // if(!rnameRegEx.test(roomName.trim())) {
+    //   setRoomNameError(() => "Invalid Room Name");
+    //   errorFlag = true;
+    //   setIsLoading(false);
+    // }
+    // else {
+    //   setRoomNameError("");
+    // }
 
-    if(!unameRegEx.test(hostName.trim())) {
-      setHostNameError(() => "Invalid Host Name");
-      errorFlag = true;
-      setIsLoading(false);
-    } 
-    else {
-      setHostNameError(() => "");
-    }
+    // if(!unameRegEx.test(hostName.trim())) {
+    //   setHostNameError(() => "Invalid Host Name");
+    //   errorFlag = true;
+    //   setIsLoading(false);
+    // } 
+    // else {
+    //   setHostNameError(() => "");
+    // }
 
     if(enablePassword && !passwordRegEx.test(password.trim())) {
       setPasswordError(() => "Password must contain: at least 1 uppercase letter, 1 lowercase letter, 1 digit, 1 special character (@$!%*?&), and be at least 8 characters long." );
@@ -176,7 +176,7 @@ const CreateRoom: React.FC = () => {
                       />
                       <div className="absolute inset-0 bg-blue-500/10 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     </div>
-                    {roomNameError && <p className='text-red-500 text-sm font-bold'>{roomNameError}</p>}
+                    {/* {roomNameError && <p className='text-red-500 text-sm font-bold'>{roomNameError}</p>} */}
                   </div>
                   {/* Host Name */}
                   <div className="space-y-2">
@@ -195,7 +195,7 @@ const CreateRoom: React.FC = () => {
                       />
                       <div className="absolute inset-0 bg-blue-500/10 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     </div>
-                    {hostNameError && <p className='text-red-500 font-bold text-sm'>{hostNameError}</p>}
+                    {/* {hostNameError && <p className='text-red-500 font-bold text-sm'>{hostNameError}</p>} */}
                   </div>
                   {/* Room Expiry */}
                   <div className="space-y-2">
