@@ -1421,4 +1421,3 @@ const formatFileSize = (bytes: number) => {
 
 
 export default LabRoom;
-
