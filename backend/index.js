@@ -16,7 +16,7 @@ import roomRoutes from './routes/rooms.js';
 import fileRoutes from './routes/files.js';
 import authRoutes from './routes/auth.js';
 
-RENDER_URL = "https://labrooms-an7k.onrender.com";
+const RENDER_URL = "https://labrooms-an7k.onrender.com";
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
