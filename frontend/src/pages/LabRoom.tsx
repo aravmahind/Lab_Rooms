@@ -831,14 +831,14 @@ const LabRoom: React.FC = () => {
                           </h3>
                           {activeSection === "code-sharing" && (
                             <div className="flex gap-2">
-                              <button className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-lg transition-colors">
+                              {/* <button className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-lg transition-colors">
                                 Save
                               </button>
                               <button
                                 className={`px-4 py-2 ${themeClasses.buttonSecondary} ${themeClasses.textSecondary} text-sm font-semibold rounded-lg transition-colors`}
                               >
                                 Share
-                              </button>
+                              </button> */}
                             </div>
                           )}
                         </div>
@@ -869,8 +869,14 @@ const LabRoom: React.FC = () => {
                           </div>
                         )} */}
 
+                        // Inside LabRoom.tsx render method
                         {activeSection === 'whiteboard' && (
-                          <Whiteboard roomId={roomCode} isDarkTheme={isDarkTheme} userName={memberName} />
+                          <Whiteboard
+                            key={`${showChatPanel}-${showTeamPanel}-${showFilePanel}`} // <-- ADD THIS KEY
+                            roomId={roomCode}
+                            isDarkTheme={isDarkTheme}
+                            userName={memberName}
+                          />
                         )}
 
                         {activeSection === 'file-sharing' && (

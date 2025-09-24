@@ -366,6 +366,10 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       alert('Please enter a filename.');
       return;
     }
+    if (!code.trim()) {
+      alert('Cannot save a blank file.');
+      return;
+    }
     setIsSaving(true);
     try {
       // Infer extension from language
