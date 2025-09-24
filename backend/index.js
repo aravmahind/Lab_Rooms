@@ -116,6 +116,11 @@ app.post('/rooms', createRoom);
 app.post('/rooms/:code/members', addMemberToRoom);
 app.get('/rooms/:code/members', getMembersOfRoom);
 
+app.get('/api/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+
 // Error handler middleware
 app.use(errorHandler);
 
@@ -136,9 +141,6 @@ function pingServer() {
   });
 }
 
-app.get('/api/health', (req, res) => {
-  res.status(200).send('OK');
-});
 
 // Store canvas state per room in memory (for production, use a DB)
 const canvasStates = {};
