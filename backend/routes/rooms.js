@@ -6,7 +6,7 @@ import {
   createRoom,
   updateRoom,
   deleteRoom,
-  addMember,
+  addMemberToRoom as addMember,
   removeMember,
   addCodeSnippet,
   addChatMessage

@@ -154,29 +154,61 @@ export const deleteRoom = async (req, res, next) => {
   }
 };
 
-// Add member to room (by id or code)
-export const addMember = async (req, res, next) => {
-  try {
-    const { userId, role = 'member' } = req.body;
-    const room = await Room.findById(req.params.id);
-    if (!room) {
-      return next(new ErrorResponse(`Room not found with id of ${req.params.id}`, 404));
-    }
-    if (room.admin && room.admin.toString() !== req.user.id) {
-      return next(new ErrorResponse(`User ${req.user.id} is not authorized to add members to this room`, 401));
-    }
-    const existingMemberIndex = room.members.findIndex(member => member.user && member.user.toString() === userId);
-    if (existingMemberIndex >= 0) {
-      return next(new ErrorResponse('User is already a member of this room', 400));
-    }
-    room.members.push({ user: userId, role });
-    await room.save();
-    res.status(200).json({ success: true, data: room });
-  } catch (err) {
-    next(err);
-  }
-};
+// Add member to a room by code
+export const addMemberToRoom = async (req, res) => {
+  try {
+    const { code } = req.params;
+    const { name } = req.body;
 
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Member name is required' });
+    }
+
+    const room = await Room.findOne({ code: code.toUpperCase() });
+    if (!room) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+
+    if (!room.members) room.members = [];
+
+    // Check if the incoming user is the host
+    if (room.data.hostName.toLowerCase() === name.trim().toLowerCase()) {
+      // If the host is rejoining, find their entry and update their status if needed.
+      const hostMember = room.members.find((m) => m.name.toLowerCase() === name.trim().toLowerCase());
+      if (hostMember) {
+        hostMember.isOnline = true;
+      } else {
+        // Create the host entry if it doesn't exist.
+        room.members.push({
+          id: new mongoose.Types.ObjectId().toString(),
+          name: name.trim(),
+          isOnline: true,
+          joinedAt: new Date(),
+        });
+      }
+    } else {
+      // If not the host, check for duplicate non-host members.
+      const exists = room.members.find(
+        (m) => m.name.toLowerCase() === name.trim().toLowerCase()
+      );
+      if (!exists) {
+        const newMember = {
+          id: new mongoose.Types.ObjectId().toString(),
+          name: name.trim(),
+          isOnline: true,
+          joinedAt: new Date(),
+        };
+        room.members.push(newMember);
+      }
+    }
+
+    await room.save();
+    res.status(200).json({ message: 'Member added or updated', room });
+  } catch (error) {
+    console.error('❌ Error adding member:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
 // Remove member from room
 export const removeMember = async (req, res, next) => {
   try {
@@ -265,14 +297,17 @@ export const addFileToRoom = async (req, res, next) => {
 // Get members of room
 export const getMembersOfRoom = async (req, res) => {
   try {
-    const room = await Room.findOne({ code: req.params.code });
+    const { code } = req.params;
+
+    const room = await Room.findOne({ code: code.toUpperCase() });
     if (!room) {
-      return res.status(404).json({ success: false, error: 'Room not found' });
+      return res.status(404).json({ error: 'Room not found' });
     }
-    res.status(200).json({ success: true, data: room.members });
+
+    res.status(200).json(room.members);
   } catch (error) {
-    console.error('Error getting room members:', error);
-    res.status(500).json({ success: false, error: 'Server error' });
+    console.error("❌ Error fetching members:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -474,6 +509,5 @@ function getFileType(mimeType) {
 
 // Export all required functions with their aliases
 export {
-  addMember as addMemberToRoom,
   getRoom as getRoomById,
 };

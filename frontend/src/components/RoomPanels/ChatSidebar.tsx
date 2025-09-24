@@ -28,6 +28,32 @@ interface ChatSidebarProps {
   }
 }
 
+// Function to find URLs in text and wrap them in a clickable anchor tag
+const renderMessageWithLinks = (text: string, themeClasses: any) => {
+  // Regular expression to find URLs starting with http:// or https://
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+  // Split the text by the URL regex to get an array of text and URLs
+  return text.split(urlRegex).map((part, index) => {
+    // Check if the part is a URL
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank" // Opens the link in a new tab
+          rel="noopener noreferrer" // Security best practice
+          className={`text-blue-400 hover:underline cursor-pointer ${themeClasses.text}`}
+        >
+          {part}
+        </a>
+      );
+    }
+    // If it's not a URL, return the plain text
+    return part;
+  });
+};
+
 const ChatSidebar: React.FC<ChatSidebarProps> = ({ open, onClose, messages, newMessage, onChangeMessage, onSend, messagesEndRef, themeClasses }) => {
   if (!open) return null
 
@@ -66,7 +92,10 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ open, onClose, messages, newM
                         {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <p className={`text-sm ${themeClasses.textMuted} break-words`}>{message.content}</p>
+                    {/* Render message content with clickable links */}
+                    <p className={`text-sm ${themeClasses.textMuted} break-words`}>
+                      {renderMessageWithLinks(message.content, themeClasses)}
+                    </p>
                   </div>
                 )}
               </div>

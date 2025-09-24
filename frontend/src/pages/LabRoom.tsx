@@ -218,12 +218,13 @@ const LabRoom: React.FC = () => {
   // Get room name and host name from URL parameters
   const roomName = searchParams.get("roomName") || "Untitled Room";
   const hostName = searchParams.get("hostName") || "Anonymous Host";
-  const memberName = searchParams.get("memberName") || "Host";
+  const memberName = searchParams.get("memberName") || hostName;
 
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   // const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  
+useEffect(() => {
     const fetchMembers = async () => {
       try {
         const res = await fetch(
@@ -235,6 +236,7 @@ const LabRoom: React.FC = () => {
         }
 
         const data = await res.json();
+        console.log("Fetched members data:", data);
 
         // Map MongoDB objects to your TeamMember type
         setTeamMembers(
@@ -254,6 +256,8 @@ const LabRoom: React.FC = () => {
 
     fetchMembers();
   }, [roomCode]);
+
+// ... (rest of your component code)
 
   // Chat functionality state
   const [messages, setMessages] = useState<Message[]>([
@@ -386,36 +390,36 @@ const LabRoom: React.FC = () => {
           setRoomCode(room.code);
           setRoomExists(true);
 
-          if (memberName && memberName !== "Anonymous") {
-            setTeamMembers((prev) => {
-              const existingMember = prev.find(
-                (member) => member.name === memberName
-              );
-              if (!existingMember) {
-                setMessages((prevMessages) => [
-                  ...prevMessages,
-                  {
-                    id: `join-${Date.now()}`,
-                    sender: "System",
-                    content: `${memberName} joined the room `,
-                    timestamp: new Date(),
-                    type: "system",
-                  },
-                ]);
+          // if (memberName && memberName !== "Anonymous") {
+          //   setTeamMembers((prev) => {
+          //     const existingMember = prev.find(
+          //       (member) => member.name === memberName
+          //     );
+          //     if (!existingMember) {
+          //       setMessages((prevMessages) => [
+          //         ...prevMessages,
+          //         {
+          //           id: `join-${Date.now()}`,
+          //           sender: "System",
+          //           content: `${memberName} joined the room `,
+          //           timestamp: new Date(),
+          //           type: "system",
+          //         },
+          //       ]);
 
-                return [
-                  ...prev,
-                  {
-                    id: Date.now().toString(),
-                    name: memberName,
-                    isOnline: true,
-                    joinedAt: new Date(),
-                  },
-                ];
-              }
-              return prev;
-            });
-          }
+          //       return [
+          //         ...prev,
+          //         {
+          //           id: Date.now().toString(),
+          //           name: memberName,
+          //           isOnline: true,
+          //           joinedAt: new Date(),
+          //         },
+          //       ];
+          //     }
+          //     return prev;
+          //   });
+          // }
         }
       } catch (error) {
         setRoomExists(false);
