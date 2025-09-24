@@ -16,6 +16,7 @@ import roomRoutes from './routes/rooms.js';
 import fileRoutes from './routes/files.js';
 import authRoutes from './routes/auth.js';
 
+RENDER_URL = "https://labrooms-an7k.onrender.com";
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -125,6 +126,18 @@ const io = new Server(server, {
     origin: '*',
     methods: ['GET', 'POST'],
   },
+});
+
+function pingServer() {
+  https.get(RENDER_URL, (res) => {
+    console.log('Ping successful, status:', res.statusCode);
+  }).on('error', (err) => {
+    console.error('Ping failed:', err.message);
+  });
+}
+
+app.get('/api/health', (req, res) => {
+  res.status(200).send('OK');
 });
 
 // Store canvas state per room in memory (for production, use a DB)

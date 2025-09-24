@@ -568,7 +568,7 @@ const LabRoom: React.FC = () => {
                     <h1
                       className={`text-2xl md:text-3xl font-bold ${themeClasses.text}`}
                     >
-                      {roomName} Workspace
+                      {roomName} 
                     </h1>
                     <div
                       className={`flex items-center gap-2 ${themeClasses.cardSecondary} rounded-full py-1 px-3`}
