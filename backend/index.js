@@ -62,7 +62,7 @@ import {
 import Room from './models/Room.model.js';
 
 // Import middleware
-import { protect } from './middleware/auth.js';
+// import { protect } from './middleware/auth.js';
 import errorHandler from './middleware/error.js';
 // Import config
 import connectDB from './config/db.js';

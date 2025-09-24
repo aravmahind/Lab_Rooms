@@ -4,8 +4,14 @@ import { io } from "socket.io-client";
 import Code_editor from "../components/ui/Code_editor";
 import Whiteboard from "../components/ui/whiteboard";
 import axios from "axios";
-import { FiFile, FiImage, FiMusic, FiVideo, FiCode } from 'react-icons/fi';
-import { BsFileEarmarkPdf, BsFileEarmarkWord, BsFileEarmarkExcel, BsFileEarmarkPpt, BsFileZip } from 'react-icons/bs';
+import { FiFile, FiImage, FiMusic, FiVideo, FiCode } from "react-icons/fi";
+import {
+  BsFileEarmarkPdf,
+  BsFileEarmarkWord,
+  BsFileEarmarkExcel,
+  BsFileEarmarkPpt,
+  BsFileZip,
+} from "react-icons/bs";
 import ChatSidebar from "../components/RoomPanels/ChatSidebar";
 import TeamSidebar from "../components/RoomPanels/TeamSidebar";
 import FileSidebar from "../components/RoomPanels/FileSidebar";
@@ -43,42 +49,54 @@ const LabRoom: React.FC = () => {
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // State for file sharing
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
-  const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string, url: string }>>([]);
-  const [roomFiles, setRoomFiles] = useState<Array<{
-    _id: string;
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
+    {}
+  );
+  const [uploadedFiles, setUploadedFiles] = useState<
+    Array<{ name: string; url: string }>
+  >([]);
+  const [roomFiles, setRoomFiles] = useState<
+    Array<{
+      _id: string;
+      filename: string;
+      url: string;
+      fileType: string;
+      mimeType: string;
+      size: number;
+      uploader: { id: string; name: string };
+      createdAt: string;
+    }>
+  >([]);
+  const [editorLoadFile, setEditorLoadFile] = useState<{
+    code: string;
     filename: string;
-    url: string;
-    fileType: string;
-    mimeType: string;
-    size: number;
-    uploader: { id: string; name: string };
-    createdAt: string;
-  }>>([]);
-  const [editorLoadFile, setEditorLoadFile] = useState<{ code: string; filename: string; language?: string } | null>(null);
+    language?: string;
+  } | null>(null);
 
   const SUPPORTED_LANGUAGES = [
-    { value: 'javascript', label: 'JavaScript', extensions: ['.js', '.jsx'] },
-    { value: 'typescript', label: 'TypeScript', extensions: ['.ts', '.tsx'] },
-    { value: 'python', label: 'Python', extensions: ['.py'] },
-    { value: 'java', label: 'Java', extensions: ['.java'] },
-    { value: 'cpp', label: 'C++', extensions: ['.cpp', '.cc', '.cxx', '.hpp'] },
-    { value: 'c', label: 'C', extensions: ['.c', '.h'] },
-    { value: 'html', label: 'HTML', extensions: ['.html', '.htm'] },
-    { value: 'css', label: 'CSS', extensions: ['.css'] },
-    { value: 'php', label: 'PHP', extensions: ['.php'] },
-    { value: 'shell', label: 'Shell Script', extensions: ['.sh', '.bash'] },
+    { value: "javascript", label: "JavaScript", extensions: [".js", ".jsx"] },
+    { value: "typescript", label: "TypeScript", extensions: [".ts", ".tsx"] },
+    { value: "python", label: "Python", extensions: [".py"] },
+    { value: "java", label: "Java", extensions: [".java"] },
+    { value: "cpp", label: "C++", extensions: [".cpp", ".cc", ".cxx", ".hpp"] },
+    { value: "c", label: "C", extensions: [".c", ".h"] },
+    { value: "html", label: "HTML", extensions: [".html", ".htm"] },
+    { value: "css", label: "CSS", extensions: [".css"] },
+    { value: "php", label: "PHP", extensions: [".php"] },
+    { value: "shell", label: "Shell Script", extensions: [".sh", ".bash"] },
   ];
 
   // Fetch files for the room
   const fetchRoomFiles = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/files/${roomId}`);
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/v1/files/${roomId}`
+      );
       // Type assertion to fix 'unknown' type error
-      const data = (response.data as { data: typeof roomFiles });
+      const data = response.data as { data: typeof roomFiles };
       setRoomFiles(data.data);
     } catch (error) {
-      console.error('Error fetching room files:', error);
+      console.error("Error fetching room files:", error);
     }
   };
 
@@ -95,83 +113,86 @@ const LabRoom: React.FC = () => {
     setIsUploading(true);
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
     const apiKey = import.meta.env.VITE_CLOUDINARY_API_KEY;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'labrooms_uploads';
+    const uploadPreset =
+      import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "labrooms_uploads";
     if (!cloudName || !apiKey) {
-      console.error('Cloudinary configuration is missing');
+      console.error("Cloudinary configuration is missing");
       setIsUploading(false);
       return;
     }
     // Add a small delay to show the loading state
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
     const uploadPromises = selectedFiles.map(async (file) => {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', uploadPreset);
-      formData.append('api_key', apiKey);
+      formData.append("file", file);
+      formData.append("upload_preset", uploadPreset);
+      formData.append("api_key", apiKey);
 
       // Initial progress
-      setUploadProgress(prev => ({
+      setUploadProgress((prev) => ({
         ...prev,
-        [file.name]: 5
+        [file.name]: 5,
       }));
 
-      console.log('Starting upload for:', file.name);
+      console.log("Starting upload for:", file.name);
 
       try {
         const response = await fetch(
           `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
           {
-            method: 'POST',
+            method: "POST",
             body: formData,
           }
         );
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('Upload failed:', errorText);
+          console.error("Upload failed:", errorText);
           throw new Error(`Upload failed: ${response.statusText}`);
         }
 
         const data = await response.json();
-        console.log('Upload successful:', {
+        console.log("Upload successful:", {
           name: file.name,
           url: data.secure_url,
           size: file.size,
-          type: file.type
+          type: file.type,
         });
 
         // Update progress to 100%
-        setUploadProgress(prev => ({
+        setUploadProgress((prev) => ({
           ...prev,
-          [file.name]: 100
+          [file.name]: 100,
         }));
 
         // Send file details to backend to store in MongoDB
         try {
-          await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/files/${roomId}/upload`, {
-            filename: file.name,
-            url: data.secure_url,
-            fileType: file.type.split('/')[0],
-            mimeType: file.type,
-            size: file.size,
-            uploader: { id: 'frontend', name: memberName },
-            publicId: data.public_id
-          });
+          await axios.post(
+            `${import.meta.env.VITE_API_URL}/api/v1/files/${roomId}/upload`,
+            {
+              filename: file.name,
+              url: data.secure_url,
+              fileType: file.type.split("/")[0],
+              mimeType: file.type,
+              size: file.size,
+              uploader: { id: "frontend", name: memberName },
+              publicId: data.public_id,
+            }
+          );
         } catch (err) {
-          console.error('Failed to store file in MongoDB:', err);
+          console.error("Failed to store file in MongoDB:", err);
         }
 
         return {
           name: file.name,
-          url: data.secure_url
+          url: data.secure_url,
         };
-
       } catch (error) {
         console.error(`Error uploading ${file.name}:`, error);
         // Update progress to show error state
-        setUploadProgress(prev => ({
+        setUploadProgress((prev) => ({
           ...prev,
-          [file.name]: -1 // Use -1 to indicate error state
+          [file.name]: -1, // Use -1 to indicate error state
         }));
         throw error;
       }
@@ -182,20 +203,26 @@ const LabRoom: React.FC = () => {
 
       // Process successful uploads
       const successfulUploads = results
-        .filter((result): result is PromiseFulfilledResult<{ name: string, url: string }> =>
-          result.status === 'fulfilled' && result.value !== undefined
+        .filter(
+          (
+            result
+          ): result is PromiseFulfilledResult<{ name: string; url: string }> =>
+            result.status === "fulfilled" && result.value !== undefined
         )
-        .map(result => result.value);
+        .map((result) => result.value);
 
       // Add to uploaded files list
       if (successfulUploads.length > 0) {
-        setUploadedFiles(prev => [...prev, ...successfulUploads]);
+        setUploadedFiles((prev) => [...prev, ...successfulUploads]);
       }
 
       // Log any failed uploads
       results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          console.error(`Failed to upload ${selectedFiles[index]?.name}:`, result.reason);
+        if (result.status === "rejected") {
+          console.error(
+            `Failed to upload ${selectedFiles[index]?.name}:`,
+            result.reason
+          );
         }
       });
 
@@ -204,9 +231,8 @@ const LabRoom: React.FC = () => {
         setSelectedFiles([]);
         await fetchRoomFiles();
       }
-
     } catch (error) {
-      console.error('Error during file uploads:', error);
+      console.error("Error during file uploads:", error);
     } finally {
       setIsUploading(false);
     }
@@ -223,7 +249,162 @@ const LabRoom: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   // const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  // useEffect(() => {
+  //   const fetchMembers = async () => {
+  //     try {
+  //       const res = await fetch(
+  //         `${import.meta.env.VITE_API_URL}/rooms/${roomCode}/members`
+  //       );
+
+  //       if (!res.ok) {
+  //         throw new Error("Failed to fetch members");
+  //       }
+
+  //       const data = await res.json();
+
+  //       // Map MongoDB objects to your TeamMember type
+  //       setTeamMembers(
+  //         data.map((m: any) => ({
+  //           id: m.id,
+  //           name: m.name,
+  //           isOnline: m.isOnline,
+  //           joinedAt: new Date(m.joinedAt),
+  //         }))
+  //       );
+  //     } catch (err) {
+  //       console.error(err);
+  //     } finally {
+  //       // setLoading(false);
+  //     }
+  //   };
+
+  //   fetchMembers();
+  // }, [roomCode]);
+
+  // useEffect(() => {
+  //   const fetchMembers = async () => {
+  //     try {
+  //       const res = await fetch(
+  //         `${import.meta.env.VITE_API_URL}/rooms/${roomCode}/members`
+  //       );
+
+  //       if (!res.ok) {
+  //         throw new Error("Failed to fetch members");
+  //       }
+
+  //       const responseData = await res.json(); // Renamed to avoid confusion
+
+  //       // Access the `data` property which contains the array of members
+  //       const membersData = responseData.data;
+
+  //       if (Array.isArray(membersData)) {
+  //         setTeamMembers(
+  //           membersData.map((m: any) => ({
+  //             id: m.id,
+  //             name: m.name,
+  //             isOnline: m.isOnline,
+  //             joinedAt: new Date(m.joinedAt),
+  //           }))
+  //         );
+  //       } else {
+  //         console.error(
+  //           "API response for members is not an array:",
+  //           membersData
+  //         );
+  //         setTeamMembers([]); // Set to empty array to prevent errors
+  //       }
+  //     } catch (err) {
+  //       console.error(err);
+  //     }
+  //   };
+
+  //   fetchMembers();
+  // }, [roomCode]);
+
+  // ... (rest of your component imports and state variables)
+
+// const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+
+// REFACTORED: Consolidated useEffect to handle validation and real-time updates
+// In LabRoom.tsx, replace the existing useEffect hooks with this consolidated and cleaned-up version.
+// useEffect(() => {
+//   const fetchMembers = async (code: string) => {
+//     try {
+//       const res = await fetch(
+//         `${import.meta.env.VITE_API_URL}/rooms/${code}/members`
+//       );
+//       if (!res.ok) {
+//         throw new Error("Failed to fetch members");
+//       }
+//       const responseData = await res.json();
+//       const membersData = responseData.data;
+//       console.log("Fetched members data:", membersData);
+//       if (Array.isArray(membersData)) {
+//         setTeamMembers(
+//           membersData.map((m: any) => ({
+//             id: m.id,
+//             name: m.name,
+//             isOnline: m.isOnline,
+//             joinedAt: new Date(m.joinedAt),
+//           }))
+//         );
+//       } else {
+//         console.error("API response for members is not an array:", responseData);
+//         setTeamMembers([]);
+//       }
+//     } catch (err) {
+//       console.error(err);
+//     }
+//   };
+
+//   const validateRoomAndJoin = async () => {
+//     if (!roomId) {
+//       setRoomExists(false);
+//       setIsValidating(false);
+//       return;
+//     }
+//     try {
+//       const response = await fetch(
+//         `${import.meta.env.VITE_API_URL}/rooms/code/${roomId}`
+//       );
+//       if (!response.ok) {
+//         setRoomExists(false);
+//       } else {
+//         const room = await response.json();
+//         setRoomCode(room.code);
+//         setRoomExists(true);
+
+//         // Fetch initial members
+//         await fetchMembers(room.code);
+//       }
+//     } catch (error) {
+//       setRoomExists(false);
+//     } finally {
+//       setIsLoaded(true);
+//       setIsValidating(false);
+//     }
+//   };
+
+//   validateRoomAndJoin();
+
+//   // Set up the timer
+//   const timer = setInterval(() => {
+//     setTimeLeft((prevTime) => {
+//       if (prevTime <= 1) {
+//         clearInterval(timer);
+//         return 0;
+//       }
+//       return prevTime - 1;
+//     });
+//   }, 1000);
+
+//   // Cleanup function
+//   return () => {
+//     clearInterval(timer);
+//   };
+// }, [roomId, roomCode]);
+
+useEffect(() => {
     const fetchMembers = async () => {
       try {
         const res = await fetch(
@@ -235,6 +416,7 @@ const LabRoom: React.FC = () => {
         }
 
         const data = await res.json();
+        console.log("Fetched members data:", data);
 
         // Map MongoDB objects to your TeamMember type
         setTeamMembers(
@@ -254,6 +436,8 @@ const LabRoom: React.FC = () => {
 
     fetchMembers();
   }, [roomCode]);
+
+// ... (rest of your component code)
 
   // Chat functionality state
   const [messages, setMessages] = useState<Message[]>([
@@ -386,36 +570,36 @@ const LabRoom: React.FC = () => {
           setRoomCode(room.code);
           setRoomExists(true);
 
-          if (memberName && memberName !== "Anonymous") {
-            setTeamMembers((prev) => {
-              const existingMember = prev.find(
-                (member) => member.name === memberName
-              );
-              if (!existingMember) {
-                setMessages((prevMessages) => [
-                  ...prevMessages,
-                  {
-                    id: `join-${Date.now()}`,
-                    sender: "System",
-                    content: `${memberName} joined the room `,
-                    timestamp: new Date(),
-                    type: "system",
-                  },
-                ]);
+          // if (memberName && memberName !== "Anonymous") {
+          //   setTeamMembers((prev) => {
+          //     const existingMember = prev.find(
+          //       (member) => member.name === memberName
+          //     );
+          //     if (!existingMember) {
+          //       setMessages((prevMessages) => [
+          //         ...prevMessages,
+          //         {
+          //           id: `join-${Date.now()}`,
+          //           sender: "System",
+          //           content: `${memberName} joined the room `,
+          //           timestamp: new Date(),
+          //           type: "system",
+          //         },
+          //       ]);
 
-                return [
-                  ...prev,
-                  {
-                    id: Date.now().toString(),
-                    name: memberName,
-                    isOnline: true,
-                    joinedAt: new Date(),
-                  },
-                ];
-              }
-              return prev;
-            });
-          }
+          //       return [
+          //         ...prev,
+          //         {
+          //           id: Date.now().toString(),
+          //           name: memberName,
+          //           isOnline: true,
+          //           joinedAt: new Date(),
+          //         },
+          //       ];
+          //     }
+          //     return prev;
+          //   });
+          // }
         }
       } catch (error) {
         setRoomExists(false);
@@ -493,14 +677,16 @@ const LabRoom: React.FC = () => {
         code,
         filename: file.filename,
         language: (() => {
-          const ext = file.filename.split('.').pop();
-          const lang = SUPPORTED_LANGUAGES.find(l => l.extensions.includes('.' + ext))?.value;
-          return lang || 'javascript';
+          const ext = file.filename.split(".").pop();
+          const lang = SUPPORTED_LANGUAGES.find((l) =>
+            l.extensions.includes("." + ext)
+          )?.value;
+          return lang || "javascript";
         })(),
       });
       setActiveSection("code-sharing");
     } catch (err) {
-      alert('Failed to load file content');
+      alert("Failed to load file content");
     }
   };
 
@@ -514,8 +700,9 @@ const LabRoom: React.FC = () => {
             <div className="flex items-center justify-center min-h-[50vh]">
               <div className="text-center">
                 <div
-                  className={`w-8 h-8 border-2 ${isDarkTheme ? "border-blue-400" : "border-blue-500"
-                    } border-t-transparent rounded-full animate-spin mx-auto mb-4`}
+                  className={`w-8 h-8 border-2 ${
+                    isDarkTheme ? "border-blue-400" : "border-blue-500"
+                  } border-t-transparent rounded-full animate-spin mx-auto mb-4`}
                 ></div>
                 <p className={`text-lg ${themeClasses.text}`}>
                   Validating room...
@@ -556,11 +743,13 @@ const LabRoom: React.FC = () => {
             <>
               {/* Navigation Bar - Modern Glass Effect */}
               <div
-                className={`${themeClasses.card} border-b ${themeClasses.border
-                  } shadow-lg rounded-2xl p-4 mb-6 transition-all duration-1000 ${isLoaded
+                className={`${themeClasses.card} border-b ${
+                  themeClasses.border
+                } shadow-lg rounded-2xl p-4 mb-6 transition-all duration-1000 ${
+                  isLoaded
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 translate-y-10"
-                  }`}
+                }`}
               >
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                   {/* Left: Room Title and Code */}
@@ -624,10 +813,11 @@ const LabRoom: React.FC = () => {
                       </button>
                       <button
                         onClick={copyRoomCode}
-                        className={`p-1 rounded-full transition-all duration-200 ${copyStatus === "copied"
-                          ? "bg-green-500 text-white"
-                          : `${themeClasses.button} text-white`
-                          }`}
+                        className={`p-1 rounded-full transition-all duration-200 ${
+                          copyStatus === "copied"
+                            ? "bg-green-500 text-white"
+                            : `${themeClasses.button} text-white`
+                        }`}
                         title="Copy Room Code"
                       >
                         {copyStatus === "copied" ? (
@@ -669,10 +859,11 @@ const LabRoom: React.FC = () => {
                   >
                     <button
                       onClick={() => setActiveSection("code-sharing")}
-                      className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${activeSection === "code-sharing"
-                        ? `${themeClasses.button} text-white shadow-sm`
-                        : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
-                        }`}
+                      className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${
+                        activeSection === "code-sharing"
+                          ? `${themeClasses.button} text-white shadow-sm`
+                          : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
+                      }`}
                     >
                       <svg
                         className="w-4 h-4"
@@ -691,10 +882,11 @@ const LabRoom: React.FC = () => {
                     </button>
                     <button
                       onClick={() => setActiveSection("whiteboard")}
-                      className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${activeSection === "whiteboard"
-                        ? `${themeClasses.button} text-white shadow-sm`
-                        : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
-                        }`}
+                      className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${
+                        activeSection === "whiteboard"
+                          ? `${themeClasses.button} text-white shadow-sm`
+                          : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
+                      }`}
                     >
                       <svg
                         className="w-4 h-4"
@@ -713,10 +905,11 @@ const LabRoom: React.FC = () => {
                     </button>
                     <button
                       onClick={() => setActiveSection("file-sharing")}
-                      className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${activeSection === "file-sharing"
-                        ? `${themeClasses.button} text-white shadow-sm`
-                        : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
-                        }`}
+                      className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${
+                        activeSection === "file-sharing"
+                          ? `${themeClasses.button} text-white shadow-sm`
+                          : `${themeClasses.textSecondary} hover:${themeClasses.buttonSecondary}`
+                      }`}
                     >
                       <svg
                         className="w-4 h-4"
@@ -791,15 +984,26 @@ const LabRoom: React.FC = () => {
 
               {/* Main Content Area: Code Editor, Whiteboard, or File Sharing */}
               <div
-                className={`transition-all duration-1000 delay-200 ${isLoaded
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-10"
-                  }`}
+                className={`transition-all duration-1000 delay-200 ${
+                  isLoaded
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-10"
+                }`}
               >
-                <div className="flex gap-4 overflow-hidden" style={{ minHeight: "calc(100vh - 150px)", height: "calc(100vh - 150px)" }}>
+                <div
+                  className="flex gap-4 overflow-hidden"
+                  style={{
+                    minHeight: "calc(100vh - 150px)",
+                    height: "calc(100vh - 150px)",
+                  }}
+                >
                   {/* Left/Main Column */}
-                  <div className={`flex-1 min-w-0 transition-[margin,width] duration-300`}>
-                    <div className={`${themeClasses.card} rounded-2xl ${themeClasses.border} border shadow-lg h-full flex flex-col`}>
+                  <div
+                    className={`flex-1 min-w-0 transition-[margin,width] duration-300`}
+                  >
+                    <div
+                      className={`${themeClasses.card} rounded-2xl ${themeClasses.border} border shadow-lg h-full flex flex-col`}
+                    >
                       <div className="flex flex-col flex-1 min-w-0">
                         {/* DYNAMIC HEADER */}
                         <div className="flex items-center justify-between mb-4">
@@ -851,7 +1055,7 @@ const LabRoom: React.FC = () => {
                               memberName={memberName}
                               loadFile={editorLoadFile}
                               onFileLoaded={() => setEditorLoadFile(null)}
-                            // ...other props as needed...
+                              // ...other props as needed...
                             />
                           </div>
                         )}
@@ -869,18 +1073,32 @@ const LabRoom: React.FC = () => {
                           </div>
                         )} */}
 
-                        {activeSection === 'whiteboard' && (
-                          <Whiteboard roomId={roomCode} isDarkTheme={isDarkTheme} userName={memberName} />
+                        {activeSection === "whiteboard" && (
+                          <Whiteboard
+                            roomId={roomCode}
+                            isDarkTheme={isDarkTheme}
+                            userName={memberName}
+                          />
                         )}
 
-                        {activeSection === 'file-sharing' && (
+                        {activeSection === "file-sharing" && (
                           <div className="flex-1 flex flex-col">
                             <div className="p-4 border-b border-gray-700">
-                              <h3 className="text-lg font-medium text-gray-100 mb-4">Upload Files</h3>
+                              <h3 className="text-lg font-medium text-gray-100 mb-4">
+                                Upload Files
+                              </h3>
                               <div className="flex flex-col space-y-4">
                                 <div
-                                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${selectedFiles.length > 0 ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 hover:border-blue-400'}`}
-                                  onClick={() => document.getElementById('file-upload')?.click()}
+                                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                                    selectedFiles.length > 0
+                                      ? "border-blue-500 bg-blue-500/10"
+                                      : "border-gray-600 hover:border-blue-400"
+                                  }`}
+                                  onClick={() =>
+                                    document
+                                      .getElementById("file-upload")
+                                      ?.click()
+                                  }
                                 >
                                   <input
                                     id="file-upload"
@@ -890,11 +1108,24 @@ const LabRoom: React.FC = () => {
                                     onChange={handleFileChange}
                                   />
                                   <div className="space-y-2">
-                                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                    <svg
+                                      className="mx-auto h-12 w-12 text-gray-400"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={1.5}
+                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                      />
                                     </svg>
                                     <p className="text-sm text-gray-400">
-                                      <span className="font-medium text-blue-400 hover:text-blue-300">Click to upload</span> or drag and drop
+                                      <span className="font-medium text-blue-400 hover:text-blue-300">
+                                        Click to upload
+                                      </span>{" "}
+                                      or drag and drop
                                     </p>
                                     <p className="text-xs text-gray-500">
                                       Any file type up to 50MB
@@ -904,10 +1135,15 @@ const LabRoom: React.FC = () => {
 
                                 {selectedFiles.length > 0 && (
                                   <div className="space-y-2">
-                                    <h4 className="text-sm font-medium text-gray-300">Selected Files ({selectedFiles.length})</h4>
+                                    <h4 className="text-sm font-medium text-gray-300">
+                                      Selected Files ({selectedFiles.length})
+                                    </h4>
                                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                                       {selectedFiles.map((file, index) => (
-                                        <div key={index} className="flex items-center justify-between p-2 bg-gray-800 rounded-lg">
+                                        <div
+                                          key={index}
+                                          className="flex items-center justify-between p-2 bg-gray-800 rounded-lg"
+                                        >
                                           <div className="flex items-center space-x-3">
                                             <div className="p-2 bg-gray-700 rounded-lg">
                                               <FileIcon mimeType={file.type} />
@@ -917,19 +1153,38 @@ const LabRoom: React.FC = () => {
                                                 {file.name}
                                               </p>
                                               <p className="text-xs text-gray-400">
-                                                {(file.size / 1024 / 1024).toFixed(2)} MB
+                                                {(
+                                                  file.size /
+                                                  1024 /
+                                                  1024
+                                                ).toFixed(2)}{" "}
+                                                MB
                                               </p>
                                             </div>
                                           </div>
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+                                              setSelectedFiles((prev) =>
+                                                prev.filter(
+                                                  (_, i) => i !== index
+                                                )
+                                              );
                                             }}
                                             className="text-gray-400 hover:text-red-400 p-1"
                                           >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            <svg
+                                              className="w-5 h-5"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M6 18L18 6M6 6l12 12"
+                                              />
                                             </svg>
                                           </button>
                                         </div>
@@ -939,8 +1194,10 @@ const LabRoom: React.FC = () => {
                                       <button
                                         onClick={() => {
                                           setSelectedFiles([]);
-                                          const input = document.getElementById('file-upload') as HTMLInputElement;
-                                          if (input) input.value = '';
+                                          const input = document.getElementById(
+                                            "file-upload"
+                                          ) as HTMLInputElement;
+                                          if (input) input.value = "";
                                         }}
                                         className="px-3 py-1.5 text-sm text-gray-300 hover:text-white"
                                       >
@@ -949,9 +1206,21 @@ const LabRoom: React.FC = () => {
                                       <button
                                         onClick={uploadFiles}
                                         disabled={isUploading}
-                                        className={`px-4 py-1.5 text-sm font-medium rounded-md ${isUploading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
+                                        className={`px-4 py-1.5 text-sm font-medium rounded-md ${
+                                          isUploading
+                                            ? "bg-blue-400 cursor-not-allowed"
+                                            : "bg-blue-600 hover:bg-blue-700"
+                                        } text-white`}
                                       >
-                                        {isUploading ? 'Uploading...' : `Upload ${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}`}
+                                        {isUploading
+                                          ? "Uploading..."
+                                          : `Upload ${
+                                              selectedFiles.length
+                                            } File${
+                                              selectedFiles.length !== 1
+                                                ? "s"
+                                                : ""
+                                            }`}
                                       </button>
                                     </div>
                                   </div>
@@ -962,36 +1231,66 @@ const LabRoom: React.FC = () => {
                             {/* Room Files Section */}
                             <div className="flex-1 overflow-hidden flex flex-col">
                               <div className="p-4 border-b border-gray-700">
-                                <h3 className="text-lg font-medium text-gray-100">Room Files</h3>
+                                <h3 className="text-lg font-medium text-gray-100">
+                                  Room Files
+                                </h3>
                               </div>
                               <div className="flex-1 overflow-y-auto p-4">
                                 {roomFiles.length === 0 ? (
                                   <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                                    <svg className="w-16 h-16 mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    <svg
+                                      className="w-16 h-16 mb-4 text-gray-600"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={1}
+                                        d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                      />
                                     </svg>
-                                    <p className="text-gray-400">No files in this room yet</p>
-                                    <p className="text-sm text-gray-500 mt-1">Upload your first file to get started</p>
+                                    <p className="text-gray-400">
+                                      No files in this room yet
+                                    </p>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                      Upload your first file to get started
+                                    </p>
                                   </div>
                                 ) : (
                                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {roomFiles.map((file) => (
-                                      <div key={file._id} className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-blue-500 transition-colors">
+                                      <div
+                                        key={file._id}
+                                        className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-blue-500 transition-colors"
+                                      >
                                         <div className="p-4">
                                           <div className="flex items-start space-x-3">
                                             <div className="p-2 bg-blue-900/30 rounded-lg">
-                                              <FileIcon mimeType={file.mimeType} />
+                                              <FileIcon
+                                                mimeType={file.mimeType}
+                                              />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                              <p className="text-sm font-medium text-gray-200 truncate">{file.filename}</p>
+                                              <p className="text-sm font-medium text-gray-200 truncate">
+                                                {file.filename}
+                                              </p>
                                               <div className="flex items-center text-xs text-gray-400 mt-1">
-                                                <span>{formatFileSize(file.size)}</span>
+                                                <span>
+                                                  {formatFileSize(file.size)}
+                                                </span>
                                                 <span className="mx-2">•</span>
-                                                <span>{new Date(file.createdAt).toLocaleDateString()}</span>
+                                                <span>
+                                                  {new Date(
+                                                    file.createdAt
+                                                  ).toLocaleDateString()}
+                                                </span>
                                               </div>
                                               <div className="mt-1">
                                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-700 text-gray-300">
-                                                  {file.uploader?.name || 'Unknown'}
+                                                  {file.uploader?.name ||
+                                                    "Unknown"}
                                                 </span>
                                               </div>
                                             </div>
@@ -1005,13 +1304,25 @@ const LabRoom: React.FC = () => {
                                             className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                             onClick={(e) => e.stopPropagation()}
                                           >
-                                            <svg className="-ml-0.5 mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                            <svg
+                                              className="-ml-0.5 mr-1.5 h-4 w-4"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                              />
                                             </svg>
                                             Download
                                           </a>
                                           {/* Add View button for code files */}
-                                          {file.mimeType.startsWith('text/') && (
+                                          {file.mimeType.startsWith(
+                                            "text/"
+                                          ) && (
                                             <button
                                               className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
                                               onClick={async (e) => {
@@ -1043,16 +1354,22 @@ const LabRoom: React.FC = () => {
                                 className="hidden"
                                 multiple
                                 onChange={(e) => {
-                                  if (e.target.files && e.target.files.length > 0) {
+                                  if (
+                                    e.target.files &&
+                                    e.target.files.length > 0
+                                  ) {
                                     const files = Array.from(e.target.files);
-                                    setSelectedFiles(prev => [...prev, ...files]);
+                                    setSelectedFiles((prev) => [
+                                      ...prev,
+                                      ...files,
+                                    ]);
                                     // Initialize progress for new files
                                     const newProgress = { ...uploadProgress };
-                                    files.forEach(file => {
+                                    files.forEach((file) => {
                                       newProgress[file.name] = 0;
                                     });
                                     setUploadProgress(newProgress);
-                                    e.target.value = ''; // Reset input
+                                    e.target.value = ""; // Reset input
                                   }
                                 }}
                               />
@@ -1076,7 +1393,9 @@ const LabRoom: React.FC = () => {
                                 <p className={`${themeClasses.text} mt-2`}>
                                   Drag & drop files here
                                 </p>
-                                <p className={`${themeClasses.textMuted} text-sm`}>
+                                <p
+                                  className={`${themeClasses.textMuted} text-sm`}
+                                >
                                   or click to browse
                                 </p>
                               </label>
@@ -1096,7 +1415,9 @@ const LabRoom: React.FC = () => {
                                       key={index}
                                       className="text-sm flex justify-between items-center"
                                     >
-                                      <span className={themeClasses.textSecondary}>
+                                      <span
+                                        className={themeClasses.textSecondary}
+                                      >
                                         {file.name}
                                       </span>
                                       <span className={themeClasses.textMuted}>
@@ -1109,21 +1430,37 @@ const LabRoom: React.FC = () => {
                                   <div className="flex flex-col gap-3">
                                     <div className="flex gap-2">
                                       <button
-                                        onClick={() => document.getElementById('file-upload')?.click()}
+                                        onClick={() =>
+                                          document
+                                            .getElementById("file-upload")
+                                            ?.click()
+                                        }
                                         disabled={isUploading}
-                                        className={`px-4 py-2 ${themeClasses.button} text-white text-sm font-semibold rounded-lg transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        className={`px-4 py-2 ${
+                                          themeClasses.button
+                                        } text-white text-sm font-semibold rounded-lg transition-colors ${
+                                          isUploading
+                                            ? "opacity-50 cursor-not-allowed"
+                                            : ""
+                                        }`}
                                       >
-                                        {isUploading ? 'Uploading...' : 'Add More Files'}
+                                        {isUploading
+                                          ? "Uploading..."
+                                          : "Add More Files"}
                                       </button>
 
-                                      {selectedFiles.length > 0 && !isUploading && (
-                                        <button
-                                          onClick={uploadFiles}
-                                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors"
-                                        >
-                                          Upload {selectedFiles.length} File{selectedFiles.length > 1 ? 's' : ''}
-                                        </button>
-                                      )}
+                                      {selectedFiles.length > 0 &&
+                                        !isUploading && (
+                                          <button
+                                            onClick={uploadFiles}
+                                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                                          >
+                                            Upload {selectedFiles.length} File
+                                            {selectedFiles.length > 1
+                                              ? "s"
+                                              : ""}
+                                          </button>
+                                        )}
 
                                       {isUploading && (
                                         <button
@@ -1140,46 +1477,77 @@ const LabRoom: React.FC = () => {
                                     </div>
 
                                     {/* Upload progress */}
-                                    {Object.entries(uploadProgress).map(([fileName, progress]) => {
-                                      const isError = progress === -1;
-                                      const isComplete = progress === 100;
+                                    {Object.entries(uploadProgress).map(
+                                      ([fileName, progress]) => {
+                                        const isError = progress === -1;
+                                        const isComplete = progress === 100;
 
-                                      return (
-                                        <div key={fileName} className="w-full mb-3">
-                                          <div className="flex justify-between text-xs mb-1">
-                                            <span className={`truncate max-w-[200px] ${isError ? 'text-red-500' : themeClasses.textSecondary
-                                              }`}>
-                                              {fileName}
-                                            </span>
-                                            <span className={isError ? 'text-red-500' : themeClasses.textMuted}>
-                                              {isError ? 'Failed' : `${progress}%`}
-                                            </span>
-                                          </div>
-                                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                                            <div
-                                              className={`h-2 rounded-full transition-all duration-300 ${isError
-                                                ? 'bg-red-500 w-full'
-                                                : isComplete
-                                                  ? 'bg-green-500 w-full'
-                                                  : 'bg-blue-500'
+                                        return (
+                                          <div
+                                            key={fileName}
+                                            className="w-full mb-3"
+                                          >
+                                            <div className="flex justify-between text-xs mb-1">
+                                              <span
+                                                className={`truncate max-w-[200px] ${
+                                                  isError
+                                                    ? "text-red-500"
+                                                    : themeClasses.textSecondary
                                                 }`}
-                                              style={{ width: isError || isComplete ? '100%' : `${Math.max(5, progress)}%` }}
-                                            />
+                                              >
+                                                {fileName}
+                                              </span>
+                                              <span
+                                                className={
+                                                  isError
+                                                    ? "text-red-500"
+                                                    : themeClasses.textMuted
+                                                }
+                                              >
+                                                {isError
+                                                  ? "Failed"
+                                                  : `${progress}%`}
+                                              </span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                                              <div
+                                                className={`h-2 rounded-full transition-all duration-300 ${
+                                                  isError
+                                                    ? "bg-red-500 w-full"
+                                                    : isComplete
+                                                    ? "bg-green-500 w-full"
+                                                    : "bg-blue-500"
+                                                }`}
+                                                style={{
+                                                  width:
+                                                    isError || isComplete
+                                                      ? "100%"
+                                                      : `${Math.max(
+                                                          5,
+                                                          progress
+                                                        )}%`,
+                                                }}
+                                              />
+                                            </div>
+                                            {isError && (
+                                              <p className="text-xs text-red-500 mt-1">
+                                                Upload failed. Please try again.
+                                              </p>
+                                            )}
                                           </div>
-                                          {isError && (
-                                            <p className="text-xs text-red-500 mt-1">
-                                              Upload failed. Please try again.
-                                            </p>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
+                                        );
+                                      }
+                                    )}
 
                                     {/* Room files list */}
                                     <div className="mt-6">
-                                      <h3 className="text-lg font-medium mb-3">Room Files</h3>
+                                      <h3 className="text-lg font-medium mb-3">
+                                        Room Files
+                                      </h3>
                                       {roomFiles.length === 0 ? (
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">No files in this room yet.</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                          No files in this room yet.
+                                        </p>
                                       ) : (
                                         <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                                           {roomFiles.map((file) => (
@@ -1189,14 +1557,20 @@ const LabRoom: React.FC = () => {
                                             >
                                               <div className="flex items-center space-x-3">
                                                 <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                                                  <FileIcon mimeType={file.mimeType} />
+                                                  <FileIcon
+                                                    mimeType={file.mimeType}
+                                                  />
                                                 </div>
                                                 <div>
                                                   <p className="text-sm font-medium truncate max-w-[200px]">
                                                     {file.filename}
                                                   </p>
                                                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                    {formatFileSize(file.size)} • {new Date(file.createdAt).toLocaleDateString()}
+                                                    {formatFileSize(file.size)}{" "}
+                                                    •{" "}
+                                                    {new Date(
+                                                      file.createdAt
+                                                    ).toLocaleDateString()}
                                                   </p>
                                                 </div>
                                               </div>
@@ -1206,7 +1580,9 @@ const LabRoom: React.FC = () => {
                                                   target="_blank"
                                                   rel="noopener noreferrer"
                                                   className="text-blue-500 hover:underline text-sm px-3 py-1.5 bg-white dark:bg-gray-700 rounded-md font-medium"
-                                                  onClick={(e) => e.stopPropagation()}
+                                                  onClick={(e) =>
+                                                    e.stopPropagation()
+                                                  }
                                                 >
                                                   Download
                                                 </a>
@@ -1220,10 +1596,17 @@ const LabRoom: React.FC = () => {
                                     {/* Uploaded files list */}
                                     {uploadedFiles.length > 0 && (
                                       <div className="mt-4">
-                                        <h4 className="text-sm font-medium mb-2">Recently Uploaded</h4>
+                                        <h4 className="text-sm font-medium mb-2">
+                                          Recently Uploaded
+                                        </h4>
                                         {uploadedFiles.map((file, index) => (
-                                          <div key={index} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-800 rounded">
-                                            <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                                          <div
+                                            key={index}
+                                            className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-800 rounded"
+                                          >
+                                            <span className="text-sm truncate max-w-[200px]">
+                                              {file.name}
+                                            </span>
                                             <a
                                               href={file.url}
                                               target="_blank"
@@ -1314,26 +1697,84 @@ const LabRoom: React.FC = () => {
               {/* Right Dock Icons (Meet-like) */}
               <div className="fixed bottom-6 right-6 z-50 flex flex-row gap-3">
                 <button
-                  onClick={() => { setShowTeamPanel(true); setShowChatPanel(false); setShowFilePanel(false); }}
-                  className={`w-12 h-12 rounded-full shadow-md flex items-center justify-center transition ${showTeamPanel ? 'bg-blue-600 text-white' : 'bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900'}`}
+                  onClick={() => {
+                    setShowTeamPanel(true);
+                    setShowChatPanel(false);
+                    setShowFilePanel(false);
+                  }}
+                  className={`w-12 h-12 rounded-full shadow-md flex items-center justify-center transition ${
+                    showTeamPanel
+                      ? "bg-blue-600 text-white"
+                      : "bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900"
+                  }`}
                   title="People"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" /></svg>
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197"
+                    />
+                  </svg>
                 </button>
                 <button
-                  onClick={() => { setShowChatPanel(true); setShowTeamPanel(false); setShowFilePanel(false); }}
-                  className={`w-12 h-12 rounded-full shadow-md flex items-center justify-center transition ${showChatPanel ? 'bg-blue-600 text-white' : 'bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900'}`}
+                  onClick={() => {
+                    setShowChatPanel(true);
+                    setShowTeamPanel(false);
+                    setShowFilePanel(false);
+                  }}
+                  className={`w-12 h-12 rounded-full shadow-md flex items-center justify-center transition ${
+                    showChatPanel
+                      ? "bg-blue-600 text-white"
+                      : "bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900"
+                  }`}
                   title="Chat"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
+                  </svg>
                 </button>
                 <button
-                  onClick={() => { setShowFilePanel(true); setShowTeamPanel(false); setShowChatPanel(false); }}
-                  className={`w-12 h-12 rounded-full shadow-md flex items-center justify-center transition ${showFilePanel ? 'bg-blue-600 text-white' : 'bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900'}`}
+                  onClick={() => {
+                    setShowFilePanel(true);
+                    setShowTeamPanel(false);
+                    setShowChatPanel(false);
+                  }}
+                  className={`w-12 h-12 rounded-full shadow-md flex items-center justify-center transition ${
+                    showFilePanel
+                      ? "bg-blue-600 text-white"
+                      : "bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900"
+                  }`}
                   title="Files"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
                   </svg>
                 </button>
               </div>
@@ -1347,68 +1788,123 @@ const LabRoom: React.FC = () => {
 
 // FileIcon component to display appropriate icon based on file type
 const FileIcon = ({ mimeType }: { mimeType: string }) => {
-  if (!mimeType) return <span className="w-5 h-5 text-gray-400"><FiFile /></span>;
+  if (!mimeType)
+    return (
+      <span className="w-5 h-5 text-gray-400">
+        <FiFile />
+      </span>
+    );
 
-  if (mimeType.startsWith('image/')) return <span className="w-5 h-5 text-blue-400"><FiImage /></span>;
-  if (mimeType.startsWith('audio/')) return <span className="w-5 h-5 text-purple-400"><FiMusic /></span>;
-  if (mimeType.startsWith('video/')) return <span className="w-5 h-5 text-red-400"><FiVideo /></span>;
+  if (mimeType.startsWith("image/"))
+    return (
+      <span className="w-5 h-5 text-blue-400">
+        <FiImage />
+      </span>
+    );
+  if (mimeType.startsWith("audio/"))
+    return (
+      <span className="w-5 h-5 text-purple-400">
+        <FiMusic />
+      </span>
+    );
+  if (mimeType.startsWith("video/"))
+    return (
+      <span className="w-5 h-5 text-red-400">
+        <FiVideo />
+      </span>
+    );
 
   // Document types
-  if (mimeType === 'application/pdf') return <span className="w-5 h-5 text-red-500"><BsFileEarmarkPdf /></span>;
+  if (mimeType === "application/pdf")
+    return (
+      <span className="w-5 h-5 text-red-500">
+        <BsFileEarmarkPdf />
+      </span>
+    );
 
   // Word documents
-  if ([
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-  ].includes(mimeType))
-    return <span className="w-5 h-5 text-blue-600"><BsFileEarmarkWord /></span>;
+  if (
+    [
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ].includes(mimeType)
+  )
+    return (
+      <span className="w-5 h-5 text-blue-600">
+        <BsFileEarmarkWord />
+      </span>
+    );
 
   // Excel documents
-  if ([
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  ].includes(mimeType))
-    return <span className="w-5 h-5 text-green-600"><BsFileEarmarkExcel /></span>;
+  if (
+    [
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ].includes(mimeType)
+  )
+    return (
+      <span className="w-5 h-5 text-green-600">
+        <BsFileEarmarkExcel />
+      </span>
+    );
 
   // PowerPoint documents
-  if ([
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-  ].includes(mimeType))
-    return <span className="w-5 h-5 text-orange-500"><BsFileEarmarkPpt /></span>;
+  if (
+    [
+      "application/vnd.ms-powerpoint",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ].includes(mimeType)
+  )
+    return (
+      <span className="w-5 h-5 text-orange-500">
+        <BsFileEarmarkPpt />
+      </span>
+    );
 
   // Archive files
-  if ([
-    'application/zip',
-    'application/x-rar-compressed',
-    'application/x-7z-compressed'
-  ].includes(mimeType))
-    return <span className="w-5 h-5 text-yellow-500"><BsFileZip /></span>;
+  if (
+    [
+      "application/zip",
+      "application/x-rar-compressed",
+      "application/x-7z-compressed",
+    ].includes(mimeType)
+  )
+    return (
+      <span className="w-5 h-5 text-yellow-500">
+        <BsFileZip />
+      </span>
+    );
 
   // Code files
   if (
-    mimeType.startsWith('text/') ||
-    mimeType.includes('javascript') ||
-    mimeType.includes('json') ||
-    mimeType.includes('xml') ||
-    mimeType.includes('css') ||
-    mimeType.includes('html')
+    mimeType.startsWith("text/") ||
+    mimeType.includes("javascript") ||
+    mimeType.includes("json") ||
+    mimeType.includes("xml") ||
+    mimeType.includes("css") ||
+    mimeType.includes("html")
   ) {
-    return <span className="w-5 h-5 text-green-400"><FiCode /></span>;
+    return (
+      <span className="w-5 h-5 text-green-400">
+        <FiCode />
+      </span>
+    );
   }
 
-  return <span className="w-5 h-5 text-gray-400"><FiFile /></span>;
+  return (
+    <span className="w-5 h-5 text-gray-400">
+      <FiFile />
+    </span>
+  );
 };
 
 // Helper function to format file size
 const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return '0 Bytes';
+  if (bytes === 0) return "0 Bytes";
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const sizes = ["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
-
 export default LabRoom;
-
