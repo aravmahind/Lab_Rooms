@@ -19,7 +19,7 @@ This design ensures scalability, maintainability, and real-time collaboration pe
 
 ### High-Level Architecture Diagram
 
-![LabRooms Architecture](./docs/architecture.png)
+<img width="1034" height="333" alt="image" src="https://github.com/user-attachments/assets/cec1f5d1-0e7f-4814-9742-1d39a95d816c" />
 
 ### Architecture Overview
 - **Frontend (React + TypeScript)**  
